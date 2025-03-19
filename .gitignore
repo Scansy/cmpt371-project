@@ -22,3 +22,6 @@ MemoryCaptures/
 # OS-specific files
 .DS_Store
 Thumbs.db
+
+# vscode file
+./CMPT371-Project/.vscode
