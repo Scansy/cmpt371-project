@@ -11,7 +11,12 @@ public class Bullet : MonoBehaviour
         // Implement game logic where bullet hit enemy here      
     }
 
-    void OnBecomeInvisible() {
-        Destroy(gameObject);
+    void Update()
+    {
+        Vector3 viewPos = Camera.main.WorldToViewportPoint(transform.position);
+        if (viewPos.x < 0 || viewPos.x > 1 || viewPos.y < 0 || viewPos.y > 1)
+        {
+            Debug.Log(gameObject.name + " is off-screen!");
+        }
     }
-}
+} 
