@@ -7,15 +7,15 @@ using UnityEngine.SceneManagement;
 
 public class TCPClient : MonoBehaviour
 {
-    private TcpClient client;
-    private NetworkStream stream;
-    private Thread receiveThread;
+    private TcpClient _client;
+    private NetworkStream _stream;
+    private Thread _receiveThread;
 
     public string serverIP = "127.0.0.1"; // Default server IP
     public int serverPort = 7777; // Default server port
     public GameObject playerPrefab; // Assign your player prefab in the Inspector
 
-    void Start()
+    private void Start()
     {
         ConnectToServer();
     }
@@ -24,11 +24,11 @@ public class TCPClient : MonoBehaviour
     {
         try
         {
-            client = new TcpClient(serverIP, serverPort);
-            stream = client.GetStream();
-            receiveThread = new Thread(ReceiveMessages);
-            receiveThread.IsBackground = true;
-            receiveThread.Start();
+            _client = new TcpClient(serverIP, serverPort);
+            _stream = _client.GetStream();
+            _receiveThread = new Thread(ReceiveMessages);
+            _receiveThread.IsBackground = true;
+            _receiveThread.Start();
 
             Debug.Log("Connected to server!");
 
@@ -41,25 +41,25 @@ public class TCPClient : MonoBehaviour
         }
     }
 
-    void SendMessageToServer(string message)
+    private void SendMessageToServer(string message)
     {
-        if (stream != null)
+        if (_stream != null)
         {
             byte[] data = Encoding.UTF8.GetBytes(message);
-            stream.Write(data, 0, data.Length);
+            _stream.Write(data, 0, data.Length);
             Debug.Log("Sent: " + message);
         }
     }
 
-    void ReceiveMessages()
+    private void ReceiveMessages()
     {
         byte[] buffer = new byte[1024];
 
-        while (client.Connected)
+        while (_client.Connected)
         {
             try
             {
-                int bytesRead = stream.Read(buffer, 0, buffer.Length);
+                int bytesRead = _stream.Read(buffer, 0, buffer.Length);
                 if (bytesRead == 0) break;
 
                 string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
@@ -83,7 +83,7 @@ public class TCPClient : MonoBehaviour
         }
     }
 
-    void OnGameSceneLoaded(Scene scene, LoadSceneMode mode)
+    private void OnGameSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         // Spawn the player GameObject
         if (scene.name == "Game" && playerPrefab != null)
@@ -101,36 +101,36 @@ public class TCPClient : MonoBehaviour
         Debug.Log("Returning to Main Menu...");
 
         // Clean up the client connection
-        if (client != null)
+        if (_client != null)
         {
-            client.Close();
+            _client.Close();
         }
-        if (stream != null)
+        if (_stream != null)
         {
-            stream.Close();
+            _stream.Close();
         }
-        if (receiveThread != null)
+        if (_receiveThread != null)
         {
-            receiveThread.Abort();
+            _receiveThread.Abort();
         }
 
         // Load the Main Menu scene
         SceneManager.LoadScene("Main Menu");
     }
 
-    void OnApplicationQuit()
+    private void OnApplicationQuit()
     {
-        if (client != null)
+        if (_client != null)
         {
-            client.Close();
+            _client.Close();
         }
-        if (stream != null)
+        if (_stream != null)
         {
-            stream.Close();
+            _stream.Close();
         }
-        if (receiveThread != null)
+        if (_receiveThread != null)
         {
-            receiveThread.Abort();
+            _receiveThread.Abort();
         }
     }
 }

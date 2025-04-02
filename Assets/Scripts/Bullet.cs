@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Bullet : MonoBehaviour
@@ -11,7 +9,7 @@ public class Bullet : MonoBehaviour
         // Implement game logic where bullet hit enemy here      
     }
 
-    void Update()
+    private void Update()
     {
         Vector3 viewPos = Camera.main.WorldToViewportPoint(transform.position);
         if (viewPos.x < 0 || viewPos.x > 1 || viewPos.y < 0 || viewPos.y > 1)

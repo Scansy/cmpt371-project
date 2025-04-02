@@ -1,8 +1,4 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Purchasing.Security;
 
 public class PlayerControl : MonoBehaviour
 {
@@ -10,10 +6,10 @@ public class PlayerControl : MonoBehaviour
     public Rigidbody2D rb;
     public Weapon weapon;
 
-    Vector2 moveDirection;
-    Vector2 mousePosition;
+    private Vector2 _moveDirection;
+    private Vector2 _mousePosition;
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         float moveX = Input.GetAxisRaw("Horizontal");
         float moveY = Input.GetAxisRaw("Vertical");
@@ -22,15 +18,15 @@ public class PlayerControl : MonoBehaviour
             weapon.Fire();
         }
 
-        moveDirection = new Vector2(moveX, moveY).normalized;
-        mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        _moveDirection = new Vector2(moveX, moveY).normalized;
+        _mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
     }
 
     private void FixedUpdate()
     {
-        rb.velocity = new Vector2(moveDirection.x * moveSpeed, moveDirection.y * moveSpeed);
+        rb.velocity = new Vector2(_moveDirection.x * moveSpeed, _moveDirection.y * moveSpeed);
 
-        Vector2 aimDirection = mousePosition - rb.position;
+        Vector2 aimDirection = _mousePosition - rb.position;
         float aimAngle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg - 90f;
         rb.rotation = aimAngle;
     }

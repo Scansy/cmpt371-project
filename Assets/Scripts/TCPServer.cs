@@ -1,4 +1,3 @@
-using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -7,27 +6,27 @@ using UnityEngine;
 
 public class TCPServer : MonoBehaviour
 {
-    private TcpListener server;
-    private Thread serverThread;
-    private bool isRunning = false;
+    private TcpListener _server;
+    private Thread _serverThread;
+    private bool _isRunning = false;
 
-    void Start()
+    private void Start()
     {
-        serverThread = new Thread(StartServer);
-        serverThread.IsBackground = true;
-        serverThread.Start();
+        _serverThread = new Thread(StartServer);
+        _serverThread.IsBackground = true;
+        _serverThread.Start();
     }
 
-    void StartServer()
+    private void StartServer()
     {
-        server = new TcpListener(IPAddress.Any, 7777);
-        server.Start();
-        isRunning = true;
+        _server = new TcpListener(IPAddress.Any, 7777);
+        _server.Start();
+        _isRunning = true;
         Debug.Log("Server started on port 7777...");
 
-        while (isRunning)
+        while (_isRunning)
         {
-            TcpClient client = server.AcceptTcpClient();
+            TcpClient client = _server.AcceptTcpClient();
             Debug.Log("Client connected!");
             Thread clientThread = new Thread(HandleClient);
             clientThread.IsBackground = true;
@@ -35,7 +34,7 @@ public class TCPServer : MonoBehaviour
         }
     }
 
-    void HandleClient(object obj)
+    private void HandleClient(object obj)
     {
         TcpClient client = (TcpClient)obj;
         NetworkStream stream = client.GetStream();
@@ -58,9 +57,9 @@ public class TCPServer : MonoBehaviour
         client.Close();
     }
 
-    void OnApplicationQuit()
+    private void OnApplicationQuit()
     {
-        isRunning = false;
-        server.Stop();
+        _isRunning = false;
+        _server.Stop();
     }
 }
