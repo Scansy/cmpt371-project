@@ -8,6 +8,7 @@ using System.Threading;
 using Server;
 using Shared;
 using Shared.Packet;
+using Shared.PacketHandler;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -17,12 +18,17 @@ namespace Client
     {
         private Dictionary<string, GameObject> _otherPlayers = new Dictionary<string, GameObject>();
         private TcpClient _client;
-        private NetworkStream _stream;
+        private readonly BinaryFormatter _formatter = new BinaryFormatter();
+        
         private Thread _receiveThread;
+        private NetworkStream _stream;
+        // maps type of packet  to handler
+        public readonly Dictionary<Type, IPacketHandler> PacketHandlers = new Dictionary<Type, IPacketHandler>();
+        
         private Thread _sendThread;
         // TODO: when action happens, enqueue it
         private ConcurrentQueue<IPacket> _packetQueue = new ConcurrentQueue<IPacket>(new Queue<IPacket>());
-        private readonly BinaryFormatter _formatter = new BinaryFormatter();
+
         
         public string serverIP = "10.0.0.25"; 
         public int serverPort = GameServer.DEFAULT_PORT;
@@ -57,7 +63,7 @@ namespace Client
 
         private void InitReceiveThread()
         {
-            _receiveThread = new Thread(ReceiveMessages);
+            _receiveThread = new Thread(ReceiveMessage);
             _receiveThread.IsBackground = true;
             _receiveThread.Start();
 
@@ -155,10 +161,10 @@ namespace Client
         // Handle player removal message from the server (To be used later)
         void HandleRemovePlayerMessage(string message)
         {
-            string[] parts = message.Split('|');
+            var parts = message.Split('|');
             if (parts.Length > 1)
             {
-                string playerId = parts[1];
+                var playerId = parts[1];
 
                 // Remove the player from the scene
                 if (_otherPlayers.ContainsKey(playerId))
@@ -173,46 +179,60 @@ namespace Client
             }
         }
 
-    
-        void ReceiveMessages()
+        private void ReceiveMessage()
         {
-            byte[] buffer = new byte[1024];
-
             while (_isRunning)
             {
-                try
-                {
-                    int bytesRead = _stream.Read(buffer, 0, buffer.Length);
-                    if (bytesRead == 0) break;
-
-                    string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                    Debug.Log("Received from server: " + message);
-
-                    // Handle server messages
-                    if (message.StartsWith("SpawnPlayer"))
-                    {
-                        HandleSpawnPlayerMessage(message);
-                    }
-                    else if (message.StartsWith("PlayerPositions"))
-                    {
-                        HandlePlayerPositionsMessage(message);
-                    }
-                    else if (message == "StartGame")
-                    {
-                        // Transition to the main game scene
-                        SceneManager.LoadScene("Game");
-
-                        // Spawn the player GameObject in the main game scene
-                        SceneManager.sceneLoaded += OnGameSceneLoaded;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError("Error receiving data: " + e.Message);
-                    break;
-                }
+                var packet = (IPacket)_formatter.Deserialize(_stream);
+                HandlePacket(packet);
             }
         }
+
+        private void HandlePacket(IPacket packet)
+        {
+            PacketHandlers[packet.GetType()].HandlePacket(packet);
+        }
+
+        // TODO: move to HandlePacket of each packet handler
+        // void ReceiveMessages()
+        // {
+        //     byte[] buffer = new byte[1024];
+        //
+        //     while (_isRunning)
+        //     {
+        //         try
+        //         {
+        //             int bytesRead = _stream.Read(buffer, 0, buffer.Length);
+        //             if (bytesRead == 0) break;
+        //
+        //             string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+        //             Debug.Log("Received from server: " + message);
+        //
+        //             // Handle server messages
+        //             if (message.StartsWith("SpawnPlayer"))
+        //             {
+        //                 HandleSpawnPlayerMessage(message);
+        //             }
+        //             else if (message.StartsWith("PlayerPositions"))
+        //             {
+        //                 HandlePlayerPositionsMessage(message);
+        //             }
+        //             else if (message == "StartGame")
+        //             {
+        //                 // Transition to the main game scene
+        //                 SceneManager.LoadScene("Game");
+        //
+        //                 // Spawn the player GameObject in the main game scene
+        //                 SceneManager.sceneLoaded += OnGameSceneLoaded;
+        //             }
+        //         }
+        //         catch (Exception e)
+        //         {
+        //             Debug.LogError("Error receiving data: " + e.Message);
+        //             break;
+        //         }
+        //     }
+        // }
 
         void SpawnPlayer(Vector3 position)
         {

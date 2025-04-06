@@ -16,10 +16,10 @@ namespace Server
         {
             _server = server;
             _client = client;
-            _clientThread = new Thread(DeserializeAndHandlePacket);
+            _clientThread = new Thread(ReceiveMessage);
         }
 
-        private void DeserializeAndHandlePacket()
+        private void ReceiveMessage()
         {
             while (_client.Connected)
             {
