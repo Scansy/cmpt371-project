@@ -1,6 +1,8 @@
+using System;
+
 namespace Shared.Packet
 {
-    public interface IPacket
+    public interface IPacket : IDisposable
     {
         
     }
