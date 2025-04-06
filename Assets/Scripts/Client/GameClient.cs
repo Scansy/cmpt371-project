@@ -19,6 +19,7 @@ namespace Client
         private Dictionary<string, GameObject> _otherPlayers = new Dictionary<string, GameObject>();
         private TcpClient _client;
         private readonly BinaryFormatter _formatter = new BinaryFormatter();
+        private bool _isRunning = true; // Flag to control the thread loop
         
         private Thread _receiveThread;
         private NetworkStream _stream;
@@ -28,13 +29,11 @@ namespace Client
         private Thread _sendThread;
         // TODO: when action happens, enqueue it
         private ConcurrentQueue<IPacket> _packetQueue = new ConcurrentQueue<IPacket>(new Queue<IPacket>());
-
         
         public string serverIP = "10.0.0.25"; 
         public int serverPort = GameServer.DEFAULT_PORT;
         public GameObject playerPrefab; // Assign your player prefab in the Inspector
 
-        private bool _isRunning = true; // Flag to control the thread loop
         void Start()
         {
             ConnectToServer();
@@ -69,14 +68,28 @@ namespace Client
 
             Debug.Log("Connected to server!");
         }
+        
+        private void ReceiveMessage()
+        {
+            while (_isRunning)
+            {
+                var packet = (IPacket)_formatter.Deserialize(_stream);
+                HandlePacket(packet);
+            }
+        }
+
+        private void HandlePacket(IPacket packet)
+        {
+            PacketHandlers[packet.GetType()].HandlePacket(packet);
+        }
 
         private void InitSendThread()
         {
-            _sendThread = new Thread(SendMessages);
+            _sendThread = new Thread(SendMessage);
             _sendThread.Start();
         }
 
-        private void SendMessages()
+        private void SendMessage()
         {
             while (_isRunning)
             {
@@ -105,6 +118,8 @@ namespace Client
                 Debug.Log("Sent: " + message);
             }
         }
+        
+        /*
         void HandleSpawnPlayerMessage(string message)
         {
             string[] parts = message.Split('|');
@@ -178,20 +193,7 @@ namespace Client
                 }
             }
         }
-
-        private void ReceiveMessage()
-        {
-            while (_isRunning)
-            {
-                var packet = (IPacket)_formatter.Deserialize(_stream);
-                HandlePacket(packet);
-            }
-        }
-
-        private void HandlePacket(IPacket packet)
-        {
-            PacketHandlers[packet.GetType()].HandlePacket(packet);
-        }
+        */
 
         // TODO: move to HandlePacket of each packet handler
         // void ReceiveMessages()
