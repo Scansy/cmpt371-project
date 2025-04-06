@@ -41,22 +41,27 @@ namespace Client
                 Debug.Log("Attempting to connect to server at " + serverIP + ":" + serverPort);
                 _client = new TcpClient(serverIP, serverPort);
                 _stream = _client.GetStream();
-                _receiveThread = new Thread(ReceiveMessages);
-                _receiveThread.IsBackground = true;
-                _receiveThread.Start();
-
-                Debug.Log("Connected to server!");
+                
+                InitReceiveThread();
+                InitSendThread();
 
                 // Notify the server that a new client has joined
                 SendMessageToServer("ClientConnected");
                 //SceneManager.LoadScene("Game");
-
-                InitSendThread();
             }
             catch (Exception e)
             {
                 Debug.LogError("Failed to connect to server: " + e.Message);
             }
+        }
+
+        private void InitReceiveThread()
+        {
+            _receiveThread = new Thread(ReceiveMessages);
+            _receiveThread.IsBackground = true;
+            _receiveThread.Start();
+
+            Debug.Log("Connected to server!");
         }
 
         private void InitSendThread()
