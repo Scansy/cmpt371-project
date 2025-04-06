@@ -16,15 +16,15 @@ namespace Server
         {
             _server = server;
             _client = client;
-            _clientThread = new Thread(Run);
+            _clientThread = new Thread(DeserializeAndHandlePacket);
         }
 
-        private void Run()
+        private void DeserializeAndHandlePacket()
         {
-            while ( _client.Connected)
+            while (_client.Connected)
             {
                 var stream = _client.GetStream();
-                IPacket packet = (IPacket) _formatter.Deserialize(stream);
+                var packet = (IPacket) _formatter.Deserialize(stream);
                 _server.HandlePacket(packet);
             }
         }

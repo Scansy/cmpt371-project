@@ -31,7 +31,13 @@ namespace Server
         {
             _serverThread = new Thread(StartServer);
             _serverThread.IsBackground = true;
+            InitializePacketHandlers();
             _serverThread.Start();
+        }
+
+        private void InitializePacketHandlers()
+        {
+            PacketHandlers.Add(typeof(WelcomePacket), new WelcomeHandler());
         }
 
         void StartServer()
@@ -75,8 +81,7 @@ namespace Server
             }
         }
     
-    
-
+        
         void BroadcastData(string message)
         {
             byte[] data = Encoding.UTF8.GetBytes(message);

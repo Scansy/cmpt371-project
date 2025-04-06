@@ -22,8 +22,7 @@ namespace Client
         private Thread _sendThread;
         // TODO: when action happens, enqueue it
         private ConcurrentQueue<IPacket> _packetQueue = new ConcurrentQueue<IPacket>(new Queue<IPacket>());
-        private BinaryFormatter _formatter = new BinaryFormatter();
-        private Mutex _mutex = new Mutex();
+        private readonly BinaryFormatter _formatter = new BinaryFormatter();
         
         public string serverIP = "10.0.0.25"; 
         public int serverPort = GameServer.DEFAULT_PORT;
