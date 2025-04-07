@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using Shared.Packet;
+using Shared.PacketHandler;
 using UnityEngine;
 
 namespace MockTest
@@ -12,15 +14,16 @@ namespace MockTest
     public class TestMain : MonoBehaviour
     {
         private readonly BinaryFormatter _formatter = new BinaryFormatter();
-        private IPacket packet = new WelcomePacket();
+        private IPacket originalPacket = new WelcomePacket();
         // private bool _isRunning = true;
         private Thread _serverThread;
         private TcpListener _server;
         private const int PORT = 12345;
+        private readonly Dictionary<Type, IPacketHandler> PacketHandlers = new Dictionary<Type, IPacketHandler>();
 
-        // This will run when you press Play in Unity
         void Start()
         {
+            PacketHandlers.Add(typeof(WelcomePacket), new WelcomeHandler());
             // TestSerialization();
             TestTcpSerialization();
         }
@@ -33,7 +36,7 @@ namespace MockTest
             using (MemoryStream stream = new MemoryStream())
             {
                 // Serialize the packet
-                _formatter.Serialize(stream, packet);
+                _formatter.Serialize(stream, originalPacket);
                 Debug.Log("Packet serialized successfully");
                 
                 // Reset stream position to beginning
@@ -44,7 +47,7 @@ namespace MockTest
                 Debug.Log("Packet deserialized successfully");
                 
                 // Call HandlePacket on the deserialized packet
-                deserializedPacket.HandlePacket();
+                PacketHandlers[deserializedPacket.GetType()].HandlePacket(deserializedPacket);
             }
         }
 
@@ -72,7 +75,7 @@ namespace MockTest
                     NetworkStream stream = client.GetStream();
                     
                     // Serialize the packet and send it
-                    _formatter.Serialize(stream, packet);
+                    _formatter.Serialize(stream, originalPacket);
                     Debug.Log("Packet sent over TCP successfully");
                     
                     // Wait for response from server
@@ -80,7 +83,7 @@ namespace MockTest
                     Debug.Log("Packet received over TCP successfully");
                     
                     // Call HandlePacket on the received packet
-                    receivedPacket.HandlePacket();
+                    PacketHandlers[receivedPacket.GetType()].HandlePacket(receivedPacket);
                 }
                 catch (Exception ex)
                 {

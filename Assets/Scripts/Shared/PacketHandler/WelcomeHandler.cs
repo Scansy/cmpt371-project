@@ -1,4 +1,5 @@
 using Shared.Packet;
+using UnityEngine;
 
 namespace Shared.PacketHandler
 {
@@ -6,7 +7,10 @@ namespace Shared.PacketHandler
     {
         public void HandlePacket(IPacket packet)
         {
-            throw new System.NotImplementedException();
+            Debug.Log("this is the welcome packet");
+            
+            WelcomePacket welcomePacket = packet as WelcomePacket;
+            Debug.Log("this is the data from the packet: " + welcomePacket.Data);
         }
     }
 }
