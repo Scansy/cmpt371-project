@@ -55,29 +55,16 @@ namespace Server
                 {
                     SendGameState(); // Send game state to all clients every frame
                     Thread.Sleep(1); // Adjust the sleep time as needed for performance
-
-                    try
-                    {
-                        // TODO: everytime new client tries to connect, create new ServerSideClient
+                    Debug.Log("Waiting for a client to connect...");
+                    
+                    // TODO: everytime new client tries to connect, create new ServerSideClient
                         
-                        /*
-                        TcpClient client = _server.AcceptTcpClient();
-                        Debug.Log("Client connected!");
-
-                        lock (_connectedClients)
-                        {
-                            _connectedClients.Add(client);
-                        }
-
-                        Thread clientThread = new Thread(HandleClient);
-                        clientThread.IsBackground = true;
-                        clientThread.Start(client);
-                        */
-                    }
-                    catch (SocketException ex)
-                    {
-                        Debug.LogError("Socket exception: " + ex.Message);
-                    }
+                        
+                    
+                    // catch (SocketException ex)
+                    // {
+                    //     Debug.LogError("Socket exception: " + ex.Message);
+                    // }
                 }
             }
             catch (Exception ex)
@@ -90,22 +77,22 @@ namespace Server
         void BroadcastData(string message)
         {
             byte[] data = Encoding.UTF8.GetBytes(message);
-            lock (_connectedClients)
-            {
-                for (int i = _connectedClients.Count - 1; i >= 0; i--)
-                {
-                    try
-                    {
-                        NetworkStream stream = _connectedClients[i].GetStream();
-                        stream.Write(data, 0, data.Length);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError("Error sending data to client: " + ex.Message);
-                        _connectedClients.RemoveAt(i); // Remove disconnected client
-                    }
-                }
-            }
+            // lock (_connectedClients)
+            // {
+            //     for (int i = _connectedClients.Count - 1; i >= 0; i--)
+            //     {
+            //         try
+            //         {
+            //             NetworkStream stream = _connectedClients[i].GetStream();
+            //             stream.Write(data, 0, data.Length);
+            //         }
+            //         catch (Exception ex)
+            //         {
+            //             Debug.LogError("Error sending data to client: " + ex.Message);
+            //             _connectedClients.RemoveAt(i); // Remove disconnected client
+            //         }
+            //     }
+            // }
         }
 
         void SendGameState()
@@ -163,10 +150,10 @@ namespace Server
             }
             finally
             {
-                lock (_connectedClients)
-                {
-                    _connectedClients.Remove(client);
-                }
+                // lock (_connectedClients)
+                // {
+                //     _connectedClients.Remove(client);
+                // }
 
                 lock (_players)
                 {
