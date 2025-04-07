@@ -16,13 +16,14 @@ namespace Server
         private Thread _serverThread;
         private bool _isRunning = false;
 
-        private List<TcpClient> _connectedClients = new List<TcpClient>();
+        // private List<TcpClient> _connectedClients = new List<TcpClient>();
+        public readonly Dictionary<int, ServerSideClient> ServerSideClients = new Dictionary<int, ServerSideClient>();
         private Dictionary<string, PlayerData> _players = new Dictionary<string, PlayerData>(); // Track players by ID
         public readonly Dictionary<Type, IPacketHandler> PacketHandlers = new Dictionary<Type, IPacketHandler>(); // maps packet class to handler
-
+            
         public const short DEFAULT_PORT = 7777;
         
-        public void HandlePacket(IPacket packet)
+        public void HandlePacket(IDisposable packet)
         {
             PacketHandlers[packet.GetType()].HandlePacket(packet);
         }
@@ -40,7 +41,7 @@ namespace Server
             PacketHandlers.Add(typeof(WelcomePacket), new WelcomeHandler());
         }
 
-        void StartServer()
+        private void StartServer()
         {
             try
             {
@@ -57,6 +58,9 @@ namespace Server
 
                     try
                     {
+                        // TODO: everytime new client tries to connect, create new ServerSideClient
+                        
+                        /*
                         TcpClient client = _server.AcceptTcpClient();
                         Debug.Log("Client connected!");
 
@@ -68,6 +72,7 @@ namespace Server
                         Thread clientThread = new Thread(HandleClient);
                         clientThread.IsBackground = true;
                         clientThread.Start(client);
+                        */
                     }
                     catch (SocketException ex)
                     {

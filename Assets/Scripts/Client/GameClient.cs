@@ -28,7 +28,7 @@ namespace Client
         
         private Thread _sendThread;
         // TODO: when action happens, enqueue it
-        private ConcurrentQueue<IPacket> _packetQueue = new ConcurrentQueue<IPacket>(new Queue<IPacket>());
+        private ConcurrentQueue<IDisposable> _packetQueue = new ConcurrentQueue<IDisposable>(new Queue<IDisposable>());
         
         public string serverIP = "10.0.0.25"; 
         public int serverPort = GameServer.DEFAULT_PORT;
@@ -73,12 +73,12 @@ namespace Client
         {
             while (_isRunning)
             {
-                var packet = (IPacket)_formatter.Deserialize(_stream);
+                var packet = (IDisposable)_formatter.Deserialize(_stream);
                 HandlePacket(packet);
             }
         }
 
-        private void HandlePacket(IPacket packet)
+        private void HandlePacket(IDisposable packet)
         {
             PacketHandlers[packet.GetType()].HandlePacket(packet);
         }
@@ -89,12 +89,13 @@ namespace Client
             _sendThread.Start();
         }
 
+        // TODO: allow this to send specific packet types
         private void SendMessage()
         {
             while (_isRunning)
             {
                 bool dequeued;
-                IPacket packet;
+                IDisposable packet;
 
                 lock (_packetQueue)
                 {
