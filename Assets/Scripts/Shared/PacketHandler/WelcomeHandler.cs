@@ -6,7 +6,7 @@ namespace Shared.PacketHandler
 {
     public class WelcomeHandler : IPacketHandler
     {
-        public void HandlePacket(IDisposable packet)
+        public void HandlePacket(WelcomePacket packet)
         {
             Debug.Log("this is the welcome packet");
             
