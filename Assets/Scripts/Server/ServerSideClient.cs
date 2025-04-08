@@ -20,7 +20,7 @@ namespace Server
             _clientThread = new Thread(ReceiveMessage);
         }
 
-        private void ReceiveMessage()
+        public void ReceiveMessage()
         {
             while (_client.Connected)
             {

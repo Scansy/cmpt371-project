@@ -45,26 +45,44 @@ namespace Server
         {
             try
             {
-                _server = new TcpListener(IPAddress.Any, 7636);
+                _server = new TcpListener(IPAddress.Any, 7777);
                 _server.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true); // Allow address reuse
                 _server.Start();
                 _isRunning = true;
-                Debug.Log("Server started on port 7636...");
+                Debug.Log("Server started on port 7777...");
 
                 while (_isRunning)
                 {
                     SendGameState(); // Send game state to all clients every frame
                     Thread.Sleep(1); // Adjust the sleep time as needed for performance
-                    Debug.Log("Waiting for a client to connect...");
+                   
+                    //Debug.Log("Waiting for a client to connect...");
                     
                     // TODO: everytime new client tries to connect, create new ServerSideClient
-                        
-                        
-                    
-                    // catch (SocketException ex)
-                    // {
-                    //     Debug.LogError("Socket exception: " + ex.Message);
-                    // }
+                    if (_server.Pending()) // Check if a client is waiting to connect
+                    {
+                        TcpClient client = _server.AcceptTcpClient(); // Accept the client connection
+                        Debug.Log("Client connected!");
+
+                        // Create a new ServerSideClient for the connected client
+                        ServerSideClient serverSideClient = new ServerSideClient(this, client);
+
+                        // Optionally, add the ServerSideClient to a dictionary or list for tracking
+                        lock (ServerSideClients)
+                        {
+                            int clientId = ServerSideClients.Count + 1; // Generate a unique ID for the client
+                            ServerSideClients[clientId] = serverSideClient;
+                            Debug.Log("Client ID: " + clientId + "Added to server side clients.");
+                        }
+
+
+                        Debug.Log("Client ID:" +  ServerSideClients.Count + " Is connected?");
+
+                        Thread clientThread = new Thread(serverSideClient.ReceiveMessage);
+                        clientThread.IsBackground = true;
+                        clientThread.Start(); // Start the thread
+                        Debug.Log("Client thread started!");
+                    }
                 }
             }
             catch (Exception ex)
