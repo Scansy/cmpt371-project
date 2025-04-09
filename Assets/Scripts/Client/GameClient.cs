@@ -30,7 +30,7 @@ namespace Client
         // TODO: when action happens, enqueue it
         private ConcurrentQueue<IDisposable> _packetQueue = new ConcurrentQueue<IDisposable>(new Queue<IDisposable>());
         
-        public string serverIP = "10.0.0.25"; 
+        public string serverIP = "127.0.0.1"; 
         public int serverPort = GameServer.DEFAULT_PORT;
         public GameObject playerPrefab; // Assign your player prefab in the Inspector
 
@@ -62,6 +62,7 @@ namespace Client
 
         private void InitReceiveThread()
         {
+             Debug.Log("Going to make thread...");
             _receiveThread = new Thread(ReceiveMessage);
             _receiveThread.IsBackground = true;
             _receiveThread.Start();
