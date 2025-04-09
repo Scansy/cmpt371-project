@@ -221,7 +221,46 @@ namespace Client
                 }
             }
         }
-
+        // TODO: move to HandlePacket of each packet handler
+        // void ReceiveMessages()
+        // {
+        //     byte[] buffer = new byte[1024];
+        //
+        //     while (_isRunning)
+        //     {
+        //         try
+        //         {
+        //             int bytesRead = _stream.Read(buffer, 0, buffer.Length);
+        //             if (bytesRead == 0) break;
+        //
+        //             string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+        //             Debug.Log("Received from server: " + message);
+        //
+        //             // Handle server messages
+        //             if (message.StartsWith("SpawnPlayer"))
+        //             {
+        //                 HandleSpawnPlayerMessage(message);
+        //             }
+        //             else if (message.StartsWith("PlayerPositions"))
+        //             {
+        //                 HandlePlayerPositionsMessage(message);
+        //             }
+        //             else if (message == "StartGame")
+        //             {
+        //                 // Transition to the main game scene
+        //                 SceneManager.LoadScene("Game");
+        //
+        //                 // Spawn the player GameObject in the main game scene
+        //                 SceneManager.sceneLoaded += OnGameSceneLoaded;
+        //             }
+        //         }
+        //         catch (Exception e)
+        //         {
+        //             Debug.LogError("Error receiving data: " + e.Message);
+        //             break;
+        //         }
+        //     }
+        // }
         void SpawnPlayer(Vector3 position)
         {
             if (playerPrefab != null)
