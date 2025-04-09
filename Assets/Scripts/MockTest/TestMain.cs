@@ -14,7 +14,7 @@ namespace MockTest
     public class TestMain : MonoBehaviour
     {
         private readonly BinaryFormatter _formatter = new BinaryFormatter();
-        private IPacket originalPacket = new WelcomePacket();
+        private IDisposable originalPacket = new WelcomePacket();
         // private bool _isRunning = true;
         private Thread _serverThread;
         private TcpListener _server;
@@ -43,7 +43,7 @@ namespace MockTest
                 stream.Position = 0;
                 
                 // Deserialize the packet
-                IPacket deserializedPacket = (IPacket)_formatter.Deserialize(stream);
+                IDisposable deserializedPacket = (IDisposable)_formatter.Deserialize(stream);
                 Debug.Log("Packet deserialized successfully");
                 
                 // Call HandlePacket on the deserialized packet
@@ -79,7 +79,7 @@ namespace MockTest
                     Debug.Log("Packet sent over TCP successfully");
                     
                     // Wait for response from server
-                    IPacket receivedPacket = (IPacket)_formatter.Deserialize(stream);
+                    IDisposable receivedPacket = (IDisposable)_formatter.Deserialize(stream);
                     Debug.Log("Packet received over TCP successfully");
                     
                     // Call HandlePacket on the received packet
@@ -113,7 +113,7 @@ namespace MockTest
                 NetworkStream stream = client.GetStream();
                 
                 // Wait for packet from client
-                IPacket receivedPacket = (IPacket)_formatter.Deserialize(stream);
+                IDisposable receivedPacket = (IDisposable)_formatter.Deserialize(stream);
                 Debug.Log("Server received packet");
                 
                 // Echo the packet back to the client

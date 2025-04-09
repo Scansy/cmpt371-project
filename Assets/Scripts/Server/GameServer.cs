@@ -16,13 +16,14 @@ namespace Server
         private Thread _serverThread;
         private bool _isRunning = false;
 
-        private List<TcpClient> _connectedClients = new List<TcpClient>();
+        // private List<TcpClient> _connectedClients = new List<TcpClient>();
+        public readonly Dictionary<int, ServerSideClient> ServerSideClients = new Dictionary<int, ServerSideClient>();
         private Dictionary<string, PlayerData> _players = new Dictionary<string, PlayerData>(); // Track players by ID
         public readonly Dictionary<Type, IPacketHandler> PacketHandlers = new Dictionary<Type, IPacketHandler>(); // maps packet class to handler
-
+            
         public const short DEFAULT_PORT = 7777;
         
-        public void HandlePacket(IPacket packet)
+        public void HandlePacket(IDisposable packet)
         {
             PacketHandlers[packet.GetType()].HandlePacket(packet);
         }
@@ -40,38 +41,47 @@ namespace Server
             PacketHandlers.Add(typeof(WelcomePacket), new WelcomeHandler());
         }
 
-        void StartServer()
+        private void StartServer()
         {
             try
             {
-                _server = new TcpListener(IPAddress.Any, 7636);
+                _server = new TcpListener(IPAddress.Any, 7777);
                 _server.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true); // Allow address reuse
                 _server.Start();
                 _isRunning = true;
-                Debug.Log("Server started on port 7636...");
+                Debug.Log("Server started on port 7777...");
 
                 while (_isRunning)
                 {
                     SendGameState(); // Send game state to all clients every frame
                     Thread.Sleep(1); // Adjust the sleep time as needed for performance
-
-                    try
+                   
+                    //Debug.Log("Waiting for a client to connect...");
+                    
+                    // TODO: everytime new client tries to connect, create new ServerSideClient
+                    if (_server.Pending()) // Check if a client is waiting to connect
                     {
-                        TcpClient client = _server.AcceptTcpClient();
+                        TcpClient client = _server.AcceptTcpClient(); // Accept the client connection
                         Debug.Log("Client connected!");
 
-                        lock (_connectedClients)
+                        // Create a new ServerSideClient for the connected client
+                        ServerSideClient serverSideClient = new ServerSideClient(this, client);
+
+                        // Optionally, add the ServerSideClient to a dictionary or list for tracking
+                        lock (ServerSideClients)
                         {
-                            _connectedClients.Add(client);
+                            int clientId = ServerSideClients.Count + 1; // Generate a unique ID for the client
+                            ServerSideClients[clientId] = serverSideClient;
+                            Debug.Log("Client ID: " + clientId + "Added to server side clients.");
                         }
 
-                        Thread clientThread = new Thread(HandleClient);
+
+                        Debug.Log("Client ID:" +  ServerSideClients.Count + " Is connected?");
+
+                        Thread clientThread = new Thread(serverSideClient.ReceiveMessage);
                         clientThread.IsBackground = true;
-                        clientThread.Start(client);
-                    }
-                    catch (SocketException ex)
-                    {
-                        Debug.LogError("Socket exception: " + ex.Message);
+                        clientThread.Start(); // Start the thread
+                        Debug.Log("Client thread started!");
                     }
                 }
             }
@@ -85,22 +95,22 @@ namespace Server
         void BroadcastData(string message)
         {
             byte[] data = Encoding.UTF8.GetBytes(message);
-            lock (_connectedClients)
-            {
-                for (int i = _connectedClients.Count - 1; i >= 0; i--)
-                {
-                    try
-                    {
-                        NetworkStream stream = _connectedClients[i].GetStream();
-                        stream.Write(data, 0, data.Length);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError("Error sending data to client: " + ex.Message);
-                        _connectedClients.RemoveAt(i); // Remove disconnected client
-                    }
-                }
-            }
+            // lock (_connectedClients)
+            // {
+            //     for (int i = _connectedClients.Count - 1; i >= 0; i--)
+            //     {
+            //         try
+            //         {
+            //             NetworkStream stream = _connectedClients[i].GetStream();
+            //             stream.Write(data, 0, data.Length);
+            //         }
+            //         catch (Exception ex)
+            //         {
+            //             Debug.LogError("Error sending data to client: " + ex.Message);
+            //             _connectedClients.RemoveAt(i); // Remove disconnected client
+            //         }
+            //     }
+            // }
         }
 
         void SendGameState()
@@ -158,10 +168,10 @@ namespace Server
             }
             finally
             {
-                lock (_connectedClients)
-                {
-                    _connectedClients.Remove(client);
-                }
+                // lock (_connectedClients)
+                // {
+                //     _connectedClients.Remove(client);
+                // }
 
                 lock (_players)
                 {

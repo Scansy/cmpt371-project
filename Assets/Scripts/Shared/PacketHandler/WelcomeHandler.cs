@@ -1,3 +1,4 @@
+using System;
 using Shared.Packet;
 using UnityEngine;
 
@@ -5,7 +6,7 @@ namespace Shared.PacketHandler
 {
     public class WelcomeHandler : IPacketHandler
     {
-        public void HandlePacket(IPacket packet)
+        public void HandlePacket(IDisposable packet)
         {
             Debug.Log("this is the welcome packet");
             

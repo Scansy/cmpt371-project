@@ -1,3 +1,4 @@
+using System;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
@@ -19,12 +20,12 @@ namespace Server
             _clientThread = new Thread(ReceiveMessage);
         }
 
-        private void ReceiveMessage()
+        public void ReceiveMessage()
         {
             while (_client.Connected)
             {
                 var stream = _client.GetStream();
-                var packet = (IPacket) _formatter.Deserialize(stream);
+                var packet = (IDisposable) _formatter.Deserialize(stream);
                 _server.HandlePacket(packet);
             }
         }

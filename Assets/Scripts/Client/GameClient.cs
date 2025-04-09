@@ -26,9 +26,10 @@ namespace Client
         public readonly Dictionary<Type, IPacketHandler> PacketHandlers = new Dictionary<Type, IPacketHandler>();
         
         private Thread _sendThread;
-        private ConcurrentQueue<IPacket> _packetQueue = new ConcurrentQueue<IPacket>(new Queue<IPacket>());
+        // TODO: when action happens, enqueue it
+        private ConcurrentQueue<IDisposable> _packetQueue = new ConcurrentQueue<IDisposable>(new Queue<IDisposable>());
         
-        public string serverIP = "10.0.0.25"; 
+        public string serverIP = "127.0.0.1"; 
         public int serverPort = GameServer.DEFAULT_PORT;
         public GameObject playerPrefab;
 
@@ -69,6 +70,7 @@ namespace Client
 
         private void InitReceiveThread()
         {
+             Debug.Log("Going to make thread...");
             _receiveThread = new Thread(ReceiveMessage);
             _receiveThread.IsBackground = true;
             _receiveThread.Start();
@@ -80,12 +82,12 @@ namespace Client
         {
             while (_isRunning)
             {
-                var packet = (IPacket)_formatter.Deserialize(_stream);
+                var packet = (IDisposable)_formatter.Deserialize(_stream);
                 HandlePacket(packet);
             }
         }
 
-        private void HandlePacket(IPacket packet)
+        private void HandlePacket(IDisposable packet)
         {
             PacketHandlers[packet.GetType()].HandlePacket(packet);
         }
@@ -96,12 +98,13 @@ namespace Client
             _sendThread.Start();
         }
 
+        // TODO: allow this to send specific packet types
         private void SendMessage()
         {
             while (_isRunning)
             {
                 bool dequeued;
-                IPacket packet;
+                IDisposable packet;
 
                 lock (_packetQueue)
                 {
