@@ -62,21 +62,15 @@ namespace GameLogic
                     Debug.Log($"Point Captured by {controllingPlayer.name}!");
                 }
             }
-            // If no players in zone, decrease progress
-            else if (!playerInZone)
+            // If point is captured and no players are in zone, maintain capture
+            else if (isCaptured && !playerInZone)
             {
-                captureProgress -= Time.deltaTime;
-                if (captureProgress <= 0)
-                {
-                    captureProgress = 0;
-                    if (isCaptured)
-                    {
-                        isCaptured = false;
-                        controllingPlayer = null;
-                        UpdatePointColor();
-                        Debug.Log("Point reset to neutral!");
-                    }
-                }
+                captureProgress = captureTime; // Keep progress at max
+            }
+            // If point is not captured and no players are in zone, maintain neutral state
+            else if (!isCaptured && !playerInZone)
+            {
+                captureProgress = 0; // Keep progress at zero
             }
             // If multiple players are in zone, progress stays the same (paused)
 
@@ -129,6 +123,26 @@ namespace GameLogic
                 {
                     spriteRenderer.color = originalColor;
                 }
+            }
+        }
+
+        // Returns the player currently controlling the capture point
+        public GameObject GetControllingPlayer()
+        {
+            return controllingPlayer;
+        }
+
+        // Resets the capture point to its initial state
+        public void ResetPoint()
+        {
+            captureProgress = 0f;
+            isCaptured = false;
+            controllingPlayer = null;
+            playersInZone.Clear();
+            UpdatePointColor();
+            if (captureBar != null)
+            {
+                captureBar.value = 0f;
             }
         }
     }
