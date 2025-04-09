@@ -64,16 +64,12 @@ namespace Server
 
                         ServerSideClient serverSideClient = new ServerSideClient(this, client);
 
-                        // Optionally, add the ServerSideClient to a dictionary or list for tracking
                         lock (ServerSideClients)
                         {
                             int clientId = ServerSideClients.Count + 1; // Generate a unique ID for the client
                             ServerSideClients[clientId] = serverSideClient;
                             Debug.Log("Client ID: " + clientId + "Added to server side clients.");
                         }
-
-
-                        Debug.Log("Client ID:" +  ServerSideClients.Count + " Is connected?");
 
                         Thread clientThread = new Thread(serverSideClient.ReceiveMessage);
                         clientThread.IsBackground = true;
