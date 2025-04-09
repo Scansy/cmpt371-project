@@ -94,23 +94,44 @@ namespace Server
         
         public void BroadcastData(IDisposable packet)
         {
-            // byte[] data = Encoding.UTF8.GetBytes(message);
-            // lock (_connectedClients)
-            // {
-            //     for (int i = _connectedClients.Count - 1; i >= 0; i--)
-            //     {
-            //         try
-            //         {
-            //             NetworkStream stream = _connectedClients[i].GetStream();
-            //             stream.Write(data, 0, data.Length);
-            //         }
-            //         catch (Exception ex)
-            //         {
-            //             Debug.LogError("Error sending data to client: " + ex.Message);
-            //             _connectedClients.RemoveAt(i); // Remove disconnected client
-            //         }
-            //     }
-            // }
+            lock (ServerSideClients)
+            {
+                List<int> disconnectedClients = new List<int>();
+                
+                foreach (var clientPair in ServerSideClients)
+                {
+                    try
+                    {
+                        int clientId = clientPair.Key;
+                        ServerSideClient serverSideClient = clientPair.Value;
+                        
+                        if (serverSideClient != null && serverSideClient.IsConnected())
+                        {
+                            serverSideClient.SendMessage(packet);
+                        }
+                        else
+                        {
+                            disconnectedClients.Add(clientId);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError($"Error sending data to client {clientPair.Key}: {ex.Message}");
+                        disconnectedClients.Add(clientPair.Key);
+                    }
+                }
+                
+                RemoveDisconnectedClients(disconnectedClients);
+            }
+        }
+        
+        private void RemoveDisconnectedClients(List<int> disconnectedClientIds)
+        {
+            foreach (int clientId in disconnectedClientIds)
+            {
+                ServerSideClients.Remove(clientId);
+                Debug.Log($"Removed disconnected client {clientId}");
+            }
         }
 
         private void UpdatePlayerPositions()
