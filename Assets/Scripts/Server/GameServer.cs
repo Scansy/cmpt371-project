@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using GameLogic;
 using Shared.Packet;
 using Shared.PacketHandler;
 using UnityEngine;
@@ -53,7 +54,7 @@ namespace Server
 
                 while (_isRunning)
                 {
-                    SendGameState(); // Send game state to all clients every frame
+                    UpdatePlayerPositions(); // Send game state to all clients every frame
                     Thread.Sleep(1); // Adjust the sleep time as needed for performance
                    
                     //Debug.Log("Waiting for a client to connect...");
@@ -90,11 +91,10 @@ namespace Server
                 Debug.LogError("Failed to start server: " + ex.Message);
             }
         }
-    
         
-        void BroadcastData(string message)
+        public void BroadcastData(IDisposable packet)
         {
-            byte[] data = Encoding.UTF8.GetBytes(message);
+            // byte[] data = Encoding.UTF8.GetBytes(message);
             // lock (_connectedClients)
             // {
             //     for (int i = _connectedClients.Count - 1; i >= 0; i--)
@@ -113,20 +113,26 @@ namespace Server
             // }
         }
 
-        void SendGameState()
+        private void UpdatePlayerPositions()
         {
-            string gameState = "GameState|";
-            lock (_players)
-            {
-                foreach (var player in _players.Values)
-                {
-                    gameState += $"{player.id},{player.position.x},{player.position.y},{player.position.z};";
-                }
-            }
+            // string gameState = "GameState|";
+            // lock (_players)
+            // {
+            //     foreach (var player in _players.Values)
+            //     {
+            //         // send position data
+            //         gameState += $"{player.id},{player.position.x},{player.position.y},{player.position.z};";
+            //     }
+            // }
+            // BroadcastData(gameState);
 
-            BroadcastData(gameState);
+            //TODO:
+            // loop through all players
+            // create new UpdatePosition packet
+            // broadcast each one
         }
 
+        /*
         void HandleClient(object obj)
         {
             TcpClient client = (TcpClient)obj;
@@ -208,6 +214,7 @@ namespace Server
                 BroadcastData(updateMessage);
             }
         }
+        */
 
         void OnApplicationQuit()
         {
@@ -224,11 +231,5 @@ namespace Server
                 Debug.LogError("Error stopping server: " + ex.Message);
             }
         }
-    }
-
-    public class PlayerData
-    {
-        public string id; // Unique identifier for the player
-        public Vector3 position; // Player's position
     }
 }
