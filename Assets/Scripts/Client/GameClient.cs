@@ -95,12 +95,12 @@ namespace Client
 
         private void InitSendThread()
         {
-            _sendThread = new Thread(SendMessage);
+            _sendThread = new Thread(ProcessSendQueue);
+            _sendThread.IsBackground = true;
             _sendThread.Start();
         }
 
-        // TODO: allow this to send specific packet types
-        private void SendMessage()
+        private void ProcessSendQueue()
         {
             while (_isRunning)
             {
@@ -114,9 +114,28 @@ namespace Client
 
                 if (dequeued)
                 {
-                    _formatter.Serialize(_stream, packet);
+                    try
+                    {
+                        _formatter.Serialize(_stream, packet);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError($"Error sending packet: {ex.Message}");
+                    }
                 }
                 Thread.Sleep(1); // make it not run too many resources
+            }
+        }
+
+
+        public void SendMessage(IDisposable packet)
+        {
+            if (packet != null)
+            {
+                lock (_packetQueue)
+                {
+                    _packetQueue.Enqueue(packet);
+                }
             }
         }
 
