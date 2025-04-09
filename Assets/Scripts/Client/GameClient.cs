@@ -19,23 +19,32 @@ namespace Client
         private Dictionary<string, GameObject> _otherPlayers = new Dictionary<string, GameObject>();
         private TcpClient _client;
         private readonly BinaryFormatter _formatter = new BinaryFormatter();
-        private bool _isRunning = true; // Flag to control the thread loop
+        private bool _isRunning = true;
         
         private Thread _receiveThread;
         private NetworkStream _stream;
-        // maps type of packet  to handler
         public readonly Dictionary<Type, IPacketHandler> PacketHandlers = new Dictionary<Type, IPacketHandler>();
         
         private Thread _sendThread;
         // TODO: when action happens, enqueue it
         private ConcurrentQueue<IDisposable> _packetQueue = new ConcurrentQueue<IDisposable>(new Queue<IDisposable>());
         
-        public string serverIP = "10.0.0.25"; 
+        public string serverIP = "127.0.0.1"; 
         public int serverPort = GameServer.DEFAULT_PORT;
-        public GameObject playerPrefab; // Assign your player prefab in the Inspector
+        public GameObject playerPrefab;
+
+        private PlayerSpawner playerSpawner;
+        private string localPlayerId;
 
         void Start()
         {
+            playerSpawner = PlayerSpawner.Instance;
+            if (playerSpawner == null)
+            {
+                Debug.LogError("PlayerSpawner not found in scene!");
+                return;
+            }
+            
             ConnectToServer();
         }
 
@@ -52,7 +61,6 @@ namespace Client
 
                 // Notify the server that a new client has joined
                 SendMessageToServer("ClientConnected");
-                //SceneManager.LoadScene("Game");
             }
             catch (Exception e)
             {
@@ -62,6 +70,7 @@ namespace Client
 
         private void InitReceiveThread()
         {
+             Debug.Log("Going to make thread...");
             _receiveThread = new Thread(ReceiveMessage);
             _receiveThread.IsBackground = true;
             _receiveThread.Start();
@@ -120,7 +129,6 @@ namespace Client
             }
         }
         
-        /*
         void HandleSpawnPlayerMessage(string message)
         {
             string[] parts = message.Split('|');
@@ -137,10 +145,18 @@ namespace Client
                 // Check if this player already exists
                 if (!_otherPlayers.ContainsKey(playerId))
                 {
-                    // Spawn the player
+                    // Spawn the player using PlayerSpawner if available
                     MainThreadDispatcher.RunOnMainThread(() =>
                     {
-                        GameObject newPlayer = Instantiate(playerPrefab, spawnPosition, Quaternion.identity);
+                        GameObject newPlayer;
+                        if (playerSpawner != null)
+                        {
+                            newPlayer = playerSpawner.SpawnNetworkPlayer(playerId, spawnPosition);
+                        }
+                        else
+                        {
+                            newPlayer = Instantiate(playerPrefab, spawnPosition, Quaternion.identity);
+                        }
                         _otherPlayers[playerId] = newPlayer;
                         Debug.Log($"Spawned player {playerId} at position {spawnPosition}");
                     });
@@ -163,18 +179,25 @@ namespace Client
                     float.Parse(parts[3])
                 );
 
-                // Update the player's position
+                // Update the player's position using PlayerSpawner if available
                 if (_otherPlayers.ContainsKey(playerId))
                 {
                     MainThreadDispatcher.RunOnMainThread(() =>
                     {
-                        _otherPlayers[playerId].transform.position = position;
+                        if (playerSpawner != null)
+                        {
+                            playerSpawner.UpdatePlayerPosition(playerId, position);
+                        }
+                        else
+                        {
+                            _otherPlayers[playerId].transform.position = position;
+                        }
                     });
                 }
             }
         }
 
-        // Handle player removal message from the server (To be used later)
+        // Handle player removal message from the server
         void HandleRemovePlayerMessage(string message)
         {
             var parts = message.Split('|');
@@ -182,20 +205,25 @@ namespace Client
             {
                 var playerId = parts[1];
 
-                // Remove the player from the scene
+                // Remove the player from the scene using PlayerSpawner if available
                 if (_otherPlayers.ContainsKey(playerId))
                 {
                     MainThreadDispatcher.RunOnMainThread(() =>
                     {
-                        Destroy(_otherPlayers[playerId]);
+                        if (playerSpawner != null)
+                        {
+                            playerSpawner.RemoveNetworkPlayer(playerId);
+                        }
+                        else
+                        {
+                            Destroy(_otherPlayers[playerId]);
+                        }
                         _otherPlayers.Remove(playerId);
                         Debug.Log($"Removed player {playerId} from the scene.");
                     });
                 }
             }
         }
-        */
-
         // TODO: move to HandlePacket of each packet handler
         // void ReceiveMessages()
         // {
@@ -236,7 +264,6 @@ namespace Client
         //         }
         //     }
         // }
-
         void SpawnPlayer(Vector3 position)
         {
             if (playerPrefab != null)
@@ -244,7 +271,14 @@ namespace Client
                 // Enqueue the Instantiate call to the main thread
                 MainThreadDispatcher.RunOnMainThread(() =>
                 {
-                    Instantiate(playerPrefab, position, Quaternion.identity);
+                    if (playerSpawner != null)
+                    {
+                        playerSpawner.SpawnNetworkPlayer(localPlayerId, position);
+                    }
+                    else
+                    {
+                        Instantiate(playerPrefab, position, Quaternion.identity);
+                    }
                     Debug.Log("Player spawned at position: " + position);
                 });
             }
@@ -253,6 +287,7 @@ namespace Client
                 Debug.LogError("Player prefab is not assigned in the Inspector.");
             }
         }
+
         void OnGameSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             // Spawn the player GameObject
@@ -260,10 +295,16 @@ namespace Client
             {
                 MainThreadDispatcher.RunOnMainThread(() =>
                 {
-                    Instantiate(playerPrefab, Vector3.zero, Quaternion.identity);
+                    if (playerSpawner != null)
+                    {
+                        playerSpawner.SpawnNetworkPlayer(localPlayerId, Vector3.zero);
+                    }
+                    else
+                    {
+                        Instantiate(playerPrefab, Vector3.zero, Quaternion.identity);
+                    }
                     Debug.Log("Player spawned in the game scene.");
                 });
-           
             }
 
             // Unsubscribe from the event to avoid duplicate calls
@@ -295,7 +336,7 @@ namespace Client
         void OnApplicationQuit()
         {
             _isRunning = false;
-            _receiveThread?.Join(); // Wait for the thread to finish
+            _receiveThread?.Join();
             _client?.Close();
             _stream?.Close();
         }

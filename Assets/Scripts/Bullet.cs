@@ -6,9 +6,19 @@ public class Bullet : MonoBehaviour
 {
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        Destroy(gameObject);
+        // Check if we hit a player
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            // Get the PlayerControl component and trigger death
+            PlayerControl player = collision.gameObject.GetComponent<PlayerControl>();
+            if (player != null)
+            {
+                player.Die();
+            }
+        }
 
-        // Implement game logic where bullet hit enemy here      
+        // Destroy the bullet regardless of what it hit
+        Destroy(gameObject);
     }
 
     void Update()
