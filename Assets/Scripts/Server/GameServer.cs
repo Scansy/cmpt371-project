@@ -56,16 +56,12 @@ namespace Server
                 {
                     UpdatePlayerPositions(); // Send game state to all clients every frame
                     Thread.Sleep(1); // Adjust the sleep time as needed for performance
-                   
-                    //Debug.Log("Waiting for a client to connect...");
                     
-                    // TODO: everytime new client tries to connect, create new ServerSideClient
                     if (_server.Pending()) // Check if a client is waiting to connect
                     {
-                        TcpClient client = _server.AcceptTcpClient(); // Accept the client connection
+                        TcpClient client = _server.AcceptTcpClient();
                         Debug.Log("Client connected!");
 
-                        // Create a new ServerSideClient for the connected client
                         ServerSideClient serverSideClient = new ServerSideClient(this, client);
 
                         // Optionally, add the ServerSideClient to a dictionary or list for tracking
@@ -81,7 +77,7 @@ namespace Server
 
                         Thread clientThread = new Thread(serverSideClient.ReceiveMessage);
                         clientThread.IsBackground = true;
-                        clientThread.Start(); // Start the thread
+                        clientThread.Start();
                         Debug.Log("Client thread started!");
                     }
                 }

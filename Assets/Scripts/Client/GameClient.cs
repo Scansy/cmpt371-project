@@ -57,16 +57,19 @@ namespace Client
                 _client = new TcpClient(serverIP, serverPort);
                 _stream = _client.GetStream();
                 
+                InitializePacketHandlers();
                 InitReceiveThread();
                 InitSendThread();
-
-                // Notify the server that a new client has joined
-                SendMessageToServer("ClientConnected");
             }
             catch (Exception e)
             {
                 Debug.LogError("Failed to connect to server: " + e.Message);
             }
+        }
+
+        private void InitializePacketHandlers()
+        {
+            
         }
 
         private void InitReceiveThread()
@@ -126,7 +129,6 @@ namespace Client
                 Thread.Sleep(1); // make it not run too many resources
             }
         }
-
 
         public void SendMessage(IDisposable packet)
         {
