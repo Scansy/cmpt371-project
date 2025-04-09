@@ -30,8 +30,8 @@ namespace Client
 
         private ConcurrentQueue<IDisposable> _packetQueue = new ConcurrentQueue<IDisposable>(new Queue<IDisposable>());
         
-        public string serverIP = "127.0.0.1"; 
-        public int serverPort = GameServer.DEFAULT_PORT;
+        private readonly string serverIP = "127.0.0.1";
+        private const int serverPort = GameServer.DEFAULT_PORT;
         public GameObject playerPrefab;
 
         private PlayerSpawner playerSpawner;
@@ -39,12 +39,12 @@ namespace Client
 
         void Start()
         {
-            playerSpawner = PlayerSpawner.Instance;
-            if (playerSpawner == null)
-            {
-                Debug.LogError("PlayerSpawner not found in scene!");
-                return;
-            }
+            // playerSpawner = PlayerSpawner.Instance;
+            // if (playerSpawner == null)
+            // {
+            //     Debug.LogError("PlayerSpawner not found in scene!");
+            //     return;
+            // }
             
             ConnectToServer();
         }
