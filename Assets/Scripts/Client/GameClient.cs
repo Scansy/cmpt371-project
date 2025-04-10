@@ -49,6 +49,9 @@ namespace Client
             ConnectToServer();
         }
 
+        private int welcomePacketIdCounter = 1; // Counter for generating unique packet IDs
+        private readonly object idLock = new object(); // Lock object for thread safety
+
         private void ConnectToServer()
         {
             try
@@ -57,11 +60,18 @@ namespace Client
                 _client = new TcpClient(serverIP, serverPort);
                 _stream = _client.GetStream();
                 
-                InitializePacketHandlers();
+                if (PacketHandlers.Count == 0)
+                {
+                    InitializePacketHandlers();
+                }
                 InitReceiveThread();
                 InitSendThread();
+                lock (idLock)
+                {
+                    welcomePacketIdCounter++;
+                }
 
-                SendMessage(new WelcomePacket());
+                SendMessage(new WelcomePacket(welcomePacketIdCounter));
             }
             catch (Exception e)
             {
