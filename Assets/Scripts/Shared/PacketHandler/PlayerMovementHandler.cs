@@ -1,34 +1,49 @@
 using System;
 using Shared.Packet;
+using Server;
 using UnityEngine;
 
 namespace Shared.PacketHandler
 {
-    public class PlayerMovementHandler : MonoBehaviour, IPacketHandler
+    public class PlayerMovementHandler : IPacketHandler
     {
-        private Rigidbody2D _rb;
-
-        void Start()
-        {
-            _rb = GetComponent<Rigidbody2D>();  // Get the Rigidbody2D component
-        }
-
-        // Called to process incoming movement data
         public void HandlePacket(IDisposable packet)
         {
-            Debug.Log("Movevement handler called");
-            var playerMovementPacket = (PlayerMovementPacket)packet;
-            
-            // Update position
-            transform.position = playerMovementPacket.position;
-            
-            // Update velocity (for physics-based movement)
-            _rb.velocity = playerMovementPacket.velocity;
-            
-            // Update rotation (Z-axis only)
-            transform.rotation = Quaternion.Euler(0f, 0f, playerMovementPacket.rotation);
+            // Ensure the packet is of type PlayerMovementPacket
+            if (packet is PlayerMovementPacket playerMovementPacket)
+            {
+                Debug.Log($"Processing PlayerMovementPacket for Player ID: {playerMovementPacket.playerId}");
 
-            Debug.Log("Handler called successfully!");
+                // Get the server instance
+                var server = GameServer.Instance;
+
+                lock (server._players)
+                {
+                    // Check if the player exists on the server
+                    if (server._players.TryGetValue(playerMovementPacket.playerId.ToString(), out var playerData))
+                    {
+                        // Update the player's position, velocity, and rotation on the server
+                        playerData.position = playerMovementPacket.position;
+                        playerData.rotation = Quaternion.Euler(0f, 0f, playerMovementPacket.rotation);
+
+                        Debug.Log($"Updated Player {playerMovementPacket.playerId}: Position={playerMovementPacket.position}, Rotation={playerMovementPacket.rotation}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Player with ID {playerMovementPacket.playerId} not found on the server.");
+                    }
+                }
+
+                // Broadcast the updated position to all clients
+                server.BroadcastData(new UpdatePosClientPacket(
+                    playerMovementPacket.position,
+                    Quaternion.Euler(0f, 0f, playerMovementPacket.rotation)
+                ));
+            }
+            else
+            {
+                Debug.LogError("Received an invalid packet type in PlayerMovementHandler.");
+            }
         }
     }
 }

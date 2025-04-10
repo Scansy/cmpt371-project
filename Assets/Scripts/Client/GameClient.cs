@@ -53,7 +53,20 @@ namespace Client
             ConnectToServer();
         }
 
-        private void InitSendThread2()
+        private Vector2 _currentPosition;
+        private Vector2 _currentMovementVector;
+        private readonly object _movementLock = new object();
+
+        void FixedUpdate()
+        {
+            lock (_movementLock)
+            {
+                _currentMovementVector = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+                _currentPosition = transform.position; // Get the player's position
+            }
+        }
+
+        private void sendMovements()
         {
             _sendThread = new Thread(() =>
             {
@@ -61,12 +74,19 @@ namespace Client
                 {
                     try
                     {
-                        // Create a dummy movement vector (replace with actual movement logic)
-                        Vector2 movementVector = new Vector2(1, 1);
-                        Vector2 posVector = new Vector2(2, 2);
+                        Vector2 position;
+                        Vector2 movementVector;
 
-                        // Send the PlayerMovementPacket to the server
-                        SendMessage(new PlayerMovementPacket(posVector, movementVector, 0.0f));
+                        // Safely read the movement data
+                        lock (_movementLock)
+                        {
+                            position = _currentPosition;
+                            movementVector = _currentMovementVector;
+                        }
+
+                        // Create and send the PlayerMovementPacket
+                        var movementPacket = new PlayerMovementPacket(Int32.Parse(_localPlayerId), position, movementVector, 0.0f);
+                        SendMessage(movementPacket);
 
                         // Sleep to avoid overloading the server with too many packets
                         Thread.Sleep(50); // Adjust the interval as needed (e.g., 50ms = 20 updates per second)
@@ -78,9 +98,9 @@ namespace Client
                 }
             });
 
-            _sendThread.IsBackground = true;
-            _sendThread.Start();
-}
+        _sendThread.IsBackground = true;
+        _sendThread.Start();
+        }
 
         private int _welcomePacketIdCounter = 1; // Counter for generating unique packet IDs
         private readonly object _idLock = new object(); // Lock object for thread safety
@@ -107,7 +127,7 @@ namespace Client
                 }
 
                 SendMessage(new TestPacket(_welcomePacketIdCounter));
-                InitSendThread2();
+                sendMovements();
                 //Make a new thread and call this loop in the thread
                 // while (_isRunning) {
                 //     Vector2 myVector = new Vector2(1, 1);
