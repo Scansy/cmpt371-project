@@ -12,7 +12,7 @@ namespace Shared.PacketHandler
         public float bulletSpeed = 10f; // Bullet speed
 
         // This method processes the shoot packet and fires the shot
-        public void HandlePlayerShootPacket(IDisposable packet)
+        public void HandlePacket(IDisposable packet)
         {
             var playerShootPacket = (PlayerShootPacket)packet; 
             

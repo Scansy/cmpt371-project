@@ -37,6 +37,10 @@ namespace Client
         private PlayerSpawner _playerSpawner;
         private string _localPlayerId;
 
+        public string getPlayerId(){
+            return _localPlayerId;
+        }
+
         void Start()
         {
             // playerSpawner = PlayerSpawner.Instance;

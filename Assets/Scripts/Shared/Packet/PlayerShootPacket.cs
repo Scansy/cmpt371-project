@@ -18,7 +18,6 @@ namespace Shared.Packet
 
         public void Dispose()
         {
-            // Clean up resources if needed
         }
     }
 }

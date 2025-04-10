@@ -6,5 +6,6 @@ namespace GameLogic
     {
         public string id; // Unique identifier for the player
         public Vector3 position; // Player's position
+        public Quaternion rotation; // Player's rotation
     }
 }

@@ -1,10 +1,13 @@
 using System.Collections;
+using Shared.Packet;
 using UnityEngine;
+using Client;
 
 namespace GameLogic
 {
     public class PlayerControl : MonoBehaviour
     {
+        public GameClient client;
         public float moveSpeed = 5f;
         public Rigidbody2D rb;
         public Weapon weapon;
@@ -40,17 +43,35 @@ namespace GameLogic
 
             moveDirection = new Vector2(moveX, moveY).normalized;
             mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            
         }
+        /*
+        TODO:
+        - Change all player input to create a message and enqueue them to the packet sender
+        - Methods that will create a message:
+            - Position (pos, rotation)
+            - Shooting (in weapon.cs)
+        - Methods that will be called by the server:
+            - Die (currently called by bullet.cs)
+            - Respawn (currently called in the Die() method)
+        */
 
         private void FixedUpdate()
         {
             if (isDead) return;
 
-            rb.velocity = new Vector2(moveDirection.x * moveSpeed, moveDirection.y * moveSpeed);
+            // rb.velocity = new Vector2(moveDirection.x * moveSpeed, moveDirection.y * moveSpeed);
 
             Vector2 aimDirection = mousePosition - rb.position;
+            // z angle for aim
             float aimAngle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg - 90f;
+            Quaternion rotation = Quaternion.Euler(0, 0, aimAngle);
             rb.rotation = aimAngle;
+
+            // Easy to read
+            string id = client.getPlayerId();
+            
+            client.SendMessage(new UpdatePosServerPacket(id, rb.position, rotation));
         }
 
         public void Die()

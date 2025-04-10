@@ -12,13 +12,60 @@ namespace Server
 {
     public class GameServer : MonoBehaviour
     {
+        private static GameServer _instance;
+        private static readonly object _lock = new object();
+        private static bool _applicationIsQuitting = false;
+
+        public static GameServer Instance
+        {
+            get
+            {
+                if (_applicationIsQuitting)
+                {
+                    return null;
+                }
+
+                lock (_lock)
+                {
+                    if (_instance == null)
+                    {
+                        _instance = FindObjectOfType<GameServer>();
+                        
+                        if (_instance == null)
+                        {
+                            GameObject go = new GameObject("GameServer");
+                            _instance = go.AddComponent<GameServer>();
+                            DontDestroyOnLoad(go);
+                        }
+                    }
+                    return _instance;
+                }
+            }
+        }
+
+        private void Awake()
+        {
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+
+        private void OnDestroy()
+        {
+            _applicationIsQuitting = true;
+        }
+
         private TcpListener _server;
         private Thread _serverThread;
         private bool _isRunning = false;
 
-        // private List<TcpClient> _connectedClients = new List<TcpClient>();
         public readonly Dictionary<int, ServerSideClient> ServerSideClients = new Dictionary<int, ServerSideClient>();
-        private Dictionary<string, PlayerData> _players = new Dictionary<string, PlayerData>(); // Track players by ID
+        public Dictionary<string, PlayerData> _players = new Dictionary<string, PlayerData>(); // Track players by ID
         public readonly Dictionary<Type, IPacketHandler> PacketHandlers = new Dictionary<Type, IPacketHandler>(); // maps packet class to handler
             
         public const short DEFAULT_PORT = 7777;
@@ -41,6 +88,40 @@ namespace Server
             PacketHandlers.Add(typeof(TestPacket), new TestHandler());
         }
 
+        void HandleNewClient(TcpClient client)
+        {
+            string playerId = Guid.NewGuid().ToString(); // Generate unique ID
+            Vector3 spawnPosition = new Vector3(UnityEngine.Random.Range(-5f, 5f), UnityEngine.Random.Range(-5f, 5f), 0);
+
+            // Create a temporary GameObject to generate a Transform
+            GameObject tempPlayerObject = new GameObject("TempPlayer_" + playerId);
+            tempPlayerObject.transform.position = spawnPosition;
+            tempPlayerObject.transform.rotation = Quaternion.identity;
+
+            lock (_players)
+            {
+                _players[playerId] = new PlayerData
+                {
+                    id = playerId,
+                    position = spawnPosition,
+                    rotation = tempPlayerObject.transform.rotation
+                };
+            }
+
+            // Use the Transform of the temporary GameObject for the SpawnPlayerPacket
+            var spawnPacket = new SpawnPlayerPacket(spawnPosition, tempPlayerObject.transform);
+            BroadcastData(spawnPacket);
+
+            foreach (var player in _players.Values)
+            {
+                var existingPlayerPacket = new SpawnPlayerPacket(player.position,  tempPlayerObject.transform);
+                ServerSideClients[ServerSideClients.Count].SendMessage(existingPlayerPacket);
+            }
+
+            // Clean up the temporary GameObject
+            Destroy(tempPlayerObject);
+        }
+
         private void StartServer()
         {
             try
@@ -53,7 +134,7 @@ namespace Server
 
                 while (_isRunning)
                 {
-                    UpdatePlayerPositions(); // Send game state to all clients every frame
+                    // UpdatePlayerPositions(); // Send game state to all clients every frame
                     Thread.Sleep(1); // Adjust the sleep time as needed for performance
                     
                     if (_server.Pending()) // Check if a client is waiting to connect
@@ -74,6 +155,7 @@ namespace Server
                         clientThread.IsBackground = true;
                         clientThread.Start();
                         Debug.Log("Client thread started!");
+                        HandleNewClient(client); // Handle the new client
                     }
                 }
             }
@@ -125,24 +207,26 @@ namespace Server
             }
         }
 
-        private void UpdatePlayerPositions()
-        {
-            // string gameState = "GameState|";
-            // lock (_players)
-            // {
-            //     foreach (var player in _players.Values)
-            //     {
-            //         // send position data
-            //         gameState += $"{player.id},{player.position.x},{player.position.y},{player.position.z};";
-            //     }
-            // }
-            // BroadcastData(gameState);
-
-            //TODO:
-            // loop through all players
-            // create new UpdatePosition packet
-            // broadcast each one
-        }
+        // private void UpdatePlayerPositions()
+        // {
+        //     lock (_players)
+        //     {
+        //         foreach (var player in _players.Values)
+        //         {
+        //             // Convert Vector3 to Vector2 for the packet
+        //             Vector2 position2D = new Vector2(player.position.x, player.position.y);
+        //             // Convert Quaternion to float (using euler angles)
+        //             float rotation = player.rotation.eulerAngles.z;
+                    
+        //             // We need to generate a player ID for the packet
+        //             // Since we're using string IDs in _players, we'll use a hash of the string
+        //             int playerId = player.id.GetHashCode();
+                    
+        //             var updatePacket = new UpdatePosServerPacket(playerId, position2D, rotation);
+        //             BroadcastData(updatePacket);
+        //         }
+        //     }
+        // }
         
         void OnApplicationQuit()
         {

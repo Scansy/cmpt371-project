@@ -34,7 +34,6 @@ namespace GameLogic
 
         private void Start()
         {
-            // You can call this method to spawn players as needed
             SpawnPlayers();
         }
 
@@ -54,7 +53,7 @@ namespace GameLogic
                 return null;
             }
 
-            // Get spawn position (array is 0-based, so subtract 1 from playerNumber)
+            // Get spawn position 
             Vector2 spawnPos = spawnPoints[playerNumber - 1];
         
             // Instantiate the player
@@ -63,13 +62,9 @@ namespace GameLogic
             // Name the player
             player.name = $"Player{playerNumber}";
         
-            // You could also set other player-specific properties here
-            // For example, different colors, weapons, etc.
-        
             return player;
         }
 
-        // You can also use this to spawn a single player at a specific position
         public GameObject SpawnPlayerAt(int playerNumber, Vector2 position)
         {
             GameObject player = Instantiate(playerPrefab, position, Quaternion.identity);

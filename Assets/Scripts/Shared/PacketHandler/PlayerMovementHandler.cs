@@ -6,7 +6,7 @@ namespace Shared.PacketHandler
 {
     public class PlayerMovementHandler : MonoBehaviour, IPacketHandler
     {
-        private Rigidbody2D _rb;  // Assuming you are using a Rigidbody2D for physics-based movement
+        private Rigidbody2D _rb;
 
         void Start()
         {

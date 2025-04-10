@@ -20,7 +20,7 @@ namespace Server
             _clientThread = new Thread(ReceiveMessage);
         }
 
-        public void ReceiveMessage()
+        public void ReceiveMessage() // Recieves from Client
         {
             while (_client.Connected)
             {
@@ -35,7 +35,7 @@ namespace Server
             return _client != null && _client.Connected;
         }
         
-        public void SendMessage(IDisposable packet)
+        public void SendMessage(IDisposable packet) // Sends to corresponding client
         {
             if (_client != null && _client.Connected)
             {
