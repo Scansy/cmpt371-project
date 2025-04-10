@@ -18,6 +18,7 @@ namespace Shared.Packet
             this.position = position;
             this.velocity = velocity;
             this.rotation = rotation;
+            Debug.Log("Player is moving around");
         }
 
         public void Dispose()

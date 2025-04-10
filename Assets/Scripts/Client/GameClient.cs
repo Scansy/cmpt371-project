@@ -53,6 +53,35 @@ namespace Client
             ConnectToServer();
         }
 
+        private void InitSendThread2()
+        {
+            _sendThread = new Thread(() =>
+            {
+                while (_isRunning)
+                {
+                    try
+                    {
+                        // Create a dummy movement vector (replace with actual movement logic)
+                        Vector2 movementVector = new Vector2(1, 1);
+                        Vector2 posVector = new Vector2(2, 2);
+
+                        // Send the PlayerMovementPacket to the server
+                        SendMessage(new PlayerMovementPacket(posVector, movementVector, 0.0f));
+
+                        // Sleep to avoid overloading the server with too many packets
+                        Thread.Sleep(50); // Adjust the interval as needed (e.g., 50ms = 20 updates per second)
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError($"Error in send thread: {ex.Message}");
+                    }
+                }
+            });
+
+            _sendThread.IsBackground = true;
+            _sendThread.Start();
+}
+
         private int _welcomePacketIdCounter = 1; // Counter for generating unique packet IDs
         private readonly object _idLock = new object(); // Lock object for thread safety
 
@@ -70,6 +99,7 @@ namespace Client
                 }
                 InitReceiveThread();
                 InitSendThread();
+                
                 lock (_idLock)
                 {
                     _welcomePacketIdCounter++;
@@ -77,6 +107,13 @@ namespace Client
                 }
 
                 SendMessage(new TestPacket(_welcomePacketIdCounter));
+                InitSendThread2();
+                //Make a new thread and call this loop in the thread
+                // while (_isRunning) {
+                //     Vector2 myVector = new Vector2(1, 1);
+                //     SendMessage(new PlayerMovementPacket(transform.position, myVector, 0.0f));
+                // }
+                
             }
             catch (Exception e)
             {
@@ -87,6 +124,10 @@ namespace Client
         private void InitializePacketHandlers()
         {
             _packetHandlers.Add(typeof(TestPacket), new TestHandler());
+            _packetHandlers.Add(typeof(SpawnPlayerPacket), new SpawnHandler());
+            _packetHandlers.Add(typeof(UpdatePosServerPacket), new UpdatePosServerHandler());
+            _packetHandlers.Add(typeof(UpdatePosClientPacket), new UpdatePosClientHandler());
+            _packetHandlers.Add(typeof(PlayerMovementPacket), new PlayerMovementHandler());
         }
 
         private void InitReceiveThread()
@@ -99,12 +140,20 @@ namespace Client
             Debug.Log("Connected to server!");
         }
         
-        private void ReceiveMessage()
+        public void ReceiveMessage()
         {
-            while (_isRunning)
+            while (_client.Connected)
             {
-                var packet = (IDisposable)_formatter.Deserialize(_stream);
-                HandlePacket(packet);
+                try
+                {
+                    var stream = _client.GetStream();
+                    var packet = (IDisposable)_formatter.Deserialize(stream); // Deserialize the packet
+                    //Server.HandlePacket(packet); // Pass the packet to the server
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error receiving message: {ex.Message}");
+                }
             }
         }
 
@@ -124,6 +173,7 @@ namespace Client
         {
             while (_isRunning)
             {
+                //Debug.Log("Processing send queue...");
                 bool dequeued;
                 IDisposable packet;
 
@@ -134,9 +184,10 @@ namespace Client
 
                 if (dequeued)
                 {
+                    Debug.Log("Sending packet: " + packet.GetType().Name);
                     try
                     {
-                        _formatter.Serialize(_stream, packet);
+                        _formatter.Serialize(_stream, packet); // CURRENT MAIN ERROR
                     }
                     catch (Exception ex)
                     {

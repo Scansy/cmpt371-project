@@ -56,22 +56,43 @@ namespace GameLogic
             - Respawn (currently called in the Die() method)
         */
 
-        private void FixedUpdate()
+        // private void FixedUpdate()
+        // {
+        //     if (isDead) return;
+
+        //     // rb.velocity = new Vector2(moveDirection.x * moveSpeed, moveDirection.y * moveSpeed);
+
+        //     Vector2 aimDirection = mousePosition - rb.position;
+        //     // z angle for aim
+        //     float aimAngle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg - 90f;
+        //     Quaternion rotation = Quaternion.Euler(0, 0, aimAngle);
+        //     rb.rotation = aimAngle;
+
+        //     // Easy to read
+        //     string id = client.getPlayerId();
+            
+        //     client.SendMessage(new UpdatePosServerPacket(id, rb.position, rotation));
+        // }
+
+        void FixedUpdate()
         {
             if (isDead) return;
 
-            // rb.velocity = new Vector2(moveDirection.x * moveSpeed, moveDirection.y * moveSpeed);
+            // Apply movement to the Rigidbody2D
+            rb.velocity = moveDirection * moveSpeed;
 
+            // Rotate the player to face the mouse position
             Vector2 aimDirection = mousePosition - rb.position;
-            // z angle for aim
             float aimAngle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg - 90f;
-            Quaternion rotation = Quaternion.Euler(0, 0, aimAngle);
             rb.rotation = aimAngle;
 
-            // Easy to read
-            string id = client.getPlayerId();
+            // Send position and rotation updates to the server
+            if (client != null)
+            {
+                string id = client.getPlayerId();
+                client.SendMessage(new UpdatePosServerPacket(id, rb.position, Quaternion.Euler(0, 0, aimAngle)));
+            }
             
-            client.SendMessage(new UpdatePosServerPacket(id, rb.position, rotation));
         }
 
         public void Die()

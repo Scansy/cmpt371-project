@@ -7,6 +7,7 @@ using GameLogic;
 using Shared.Packet;
 using Shared.PacketHandler;
 using UnityEngine;
+using Shared;
 
 namespace Server
 {
@@ -86,40 +87,52 @@ namespace Server
         private void InitializePacketHandlers()
         {
             PacketHandlers.Add(typeof(TestPacket), new TestHandler());
+            PacketHandlers.Add(typeof(SpawnPlayerPacket), new SpawnHandler());
+            PacketHandlers.Add(typeof(UpdatePosServerPacket), new UpdatePosServerHandler());
+            PacketHandlers.Add(typeof(UpdatePosClientPacket), new UpdatePosClientHandler());
+            PacketHandlers.Add(typeof(PlayerMovementPacket), new PlayerMovementHandler());
         }
+
+        private int clientIdCounter = 1; // Counter for generating unique client IDs
 
         void HandleNewClient(TcpClient client)
         {
-            string playerId = Guid.NewGuid().ToString(); // Generate unique ID
-            Vector3 spawnPosition = new Vector3(UnityEngine.Random.Range(-5f, 5f), UnityEngine.Random.Range(-5f, 5f), 0);
-
-            // Create a temporary GameObject to generate a Transform
-            GameObject tempPlayerObject = new GameObject("TempPlayer_" + playerId);
-            tempPlayerObject.transform.position = spawnPosition;
-            tempPlayerObject.transform.rotation = Quaternion.identity;
-
-            lock (_players)
+            MainThreadDispatcher.RunOnMainThread(() =>
             {
-                _players[playerId] = new PlayerData
+                string playerId = clientIdCounter.ToString(); // Generate unique ID
+                Vector3 spawnPosition = new Vector3(UnityEngine.Random.Range(-5f, 5f), UnityEngine.Random.Range(-5f, 5f), 0);
+
+                // Create a temporary GameObject to generate a Transform
+                GameObject tempPlayerObject = new GameObject("TempPlayer_" + playerId);
+                tempPlayerObject.transform.position = spawnPosition;
+                tempPlayerObject.transform.rotation = Quaternion.identity;
+
+                lock (_players)
                 {
-                    id = playerId,
-                    position = spawnPosition,
-                    rotation = tempPlayerObject.transform.rotation
-                };
-            }
+                    _players[playerId] = new PlayerData
+                    {
+                        id = playerId,
+                        position = spawnPosition,
+                        rotation = tempPlayerObject.transform.rotation
+                    };
+                    clientIdCounter++;
+                    Debug.Log("New player added: " + playerId);
+                }
 
-            // Use the Transform of the temporary GameObject for the SpawnPlayerPacket
-            var spawnPacket = new SpawnPlayerPacket(spawnPosition, tempPlayerObject.transform);
-            BroadcastData(spawnPacket);
+                // Use the Transform of the temporary GameObject for the SpawnPlayerPacket
+                var spawnPacket = new SpawnPlayerPacket(spawnPosition, tempPlayerObject.transform);
+                BroadcastData(spawnPacket);
 
-            foreach (var player in _players.Values)
-            {
-                var existingPlayerPacket = new SpawnPlayerPacket(player.position,  tempPlayerObject.transform);
-                ServerSideClients[ServerSideClients.Count].SendMessage(existingPlayerPacket);
-            }
+                foreach (var player in _players.Values)
+                {
+                    var existingPlayerPacket = new SpawnPlayerPacket(player.position, tempPlayerObject.transform);
+                    ServerSideClients[ServerSideClients.Count].SendMessage(existingPlayerPacket);
+                    Debug.Log("Sent existing player data to new client: " + player.id);
+                }
 
-            // Clean up the temporary GameObject
-            Destroy(tempPlayerObject);
+                // Clean up the temporary GameObject
+                Destroy(tempPlayerObject);
+            });
         }
 
         private void StartServer()
