@@ -71,7 +71,7 @@ namespace Client
                     welcomePacketIdCounter++;
                 }
 
-                SendMessage(new WelcomePacket(welcomePacketIdCounter));
+                SendMessage(new WelcomePacket(welcomePacketIdCounter)); // TODO
             }
             catch (Exception e)
             {
