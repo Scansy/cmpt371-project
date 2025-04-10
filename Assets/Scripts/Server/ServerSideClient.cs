@@ -29,5 +29,19 @@ namespace Server
                 _server.HandlePacket(packet);
             }
         }
+        
+        public bool IsConnected()
+        {
+            return _client != null && _client.Connected;
+        }
+        
+        public void SendMessage(IDisposable packet)
+        {
+            if (_client != null && _client.Connected)
+            {
+                var stream = _client.GetStream();
+                _formatter.Serialize(stream, packet);
+            }
+        }
     }
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Shared.PacketHandler
 {
-    public class PlayerMovementHandler : MonoBehaviour, IPacketHandler
+    public class ProjectileMovementHandler : MonoBehaviour, IPacketHandler
     {
         private Rigidbody2D _rb;  // Assuming you are using a Rigidbody2D for physics-based movement
 
@@ -16,16 +16,16 @@ namespace Shared.PacketHandler
         // Called to process incoming movement data
         public void HandlePacket(IDisposable packet)
         {
-            var playerMovementPacket = (PlayerMovementPacket)packet;
+            var projectileMovementPacket = (ProjectileMovementPacket)packet;
             
             // Update position
-            transform.position = playerMovementPacket.position;
+            transform.position = projectileMovementPacket.position;
             
             // Update velocity (for physics-based movement)
-            _rb.velocity = playerMovementPacket.velocity;
+            _rb.velocity = projectileMovementPacket.velocity;
             
             // Update rotation (Z-axis only)
-            transform.rotation = Quaternion.Euler(0f, 0f, playerMovementPacket.rotation);
+            transform.rotation = Quaternion.Euler(0f, 0f, projectileMovementPacket.rotation);
         }
     }
 }

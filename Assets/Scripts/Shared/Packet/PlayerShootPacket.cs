@@ -16,7 +16,6 @@ namespace Shared.Packet
             this.shootAngle = shootAngle;
         }
 
-        // Dispose method (clean up)
         public void Dispose()
         {
             // Clean up resources if needed
