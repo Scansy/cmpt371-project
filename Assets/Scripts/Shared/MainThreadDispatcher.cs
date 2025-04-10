@@ -6,6 +6,7 @@ namespace Shared
 {
     public class MainThreadDispatcher : MonoBehaviour
     {
+        private static MainThreadDispatcher _instance;
         private static readonly Queue<Action> MainThreadActions = new Queue<Action>();
 
         public static void RunOnMainThread(Action action)

@@ -57,7 +57,7 @@ namespace Client
         private Vector2 _currentMovementVector;
         private readonly object _movementLock = new object();
 
-        void FixedUpdate()
+        void Update()
         {
             lock (_movementLock)
             {
@@ -66,8 +66,16 @@ namespace Client
             }
         }
 
+        private bool _isPlayerRegistered = false;
+
+        public void OnPlayerRegistered()
+        {
+            _isPlayerRegistered = true;
+        }
+
         private void sendMovements()
         {
+            Debug.Log("Starting send thread...");
             _sendThread = new Thread(() =>
             {
                 while (_isRunning)
@@ -85,6 +93,7 @@ namespace Client
                         }
 
                         // Create and send the PlayerMovementPacket
+                        Debug.Log("Sending movements to id: " + _localPlayerId);
                         var movementPacket = new PlayerMovementPacket(Int32.Parse(_localPlayerId), position, movementVector, 0.0f);
                         SendMessage(movementPacket);
 
@@ -102,7 +111,7 @@ namespace Client
         _sendThread.Start();
         }
 
-        private int _welcomePacketIdCounter = 1; // Counter for generating unique packet IDs
+        private int _welcomePacketIdCounter = 0; // Counter for generating unique packet IDs
         private readonly object _idLock = new object(); // Lock object for thread safety
 
         private void ConnectToServer()
@@ -119,15 +128,15 @@ namespace Client
                 }
                 InitReceiveThread();
                 InitSendThread();
-                
+
+                SendMessage(new TestPacket(_welcomePacketIdCounter));
+                sendMovements();
+
                 lock (_idLock)
                 {
                     _welcomePacketIdCounter++;
                     _localPlayerId = _welcomePacketIdCounter.ToString();
                 }
-
-                SendMessage(new TestPacket(_welcomePacketIdCounter));
-                sendMovements();
                 //Make a new thread and call this loop in the thread
                 // while (_isRunning) {
                 //     Vector2 myVector = new Vector2(1, 1);
@@ -164,6 +173,7 @@ namespace Client
         {
             while (_client.Connected)
             {
+                Debug.Log("Receiving message...");
                 try
                 {
                     var stream = _client.GetStream();

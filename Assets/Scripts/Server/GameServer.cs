@@ -97,8 +97,11 @@ namespace Server
 
         void HandleNewClient(TcpClient client)
         {
+
+            Debug.Log("Handling new client connection..." + clientIdCounter);
             MainThreadDispatcher.RunOnMainThread(() =>
             {
+                Debug.Log("Running on main thread...");
                 string playerId = clientIdCounter.ToString(); // Generate unique ID
                 Vector3 spawnPosition = new Vector3(UnityEngine.Random.Range(-5f, 5f), UnityEngine.Random.Range(-5f, 5f), 0);
 
@@ -193,12 +196,13 @@ namespace Server
                         
                         if (serverSideClient != null && serverSideClient.IsConnected())
                         {
+                            Debug.Log($"Sending data to client {clientId}... from BroadcastData()");
                             serverSideClient.SendMessage(packet);
                         }
-                        else
-                        {
-                            disconnectedClients.Add(clientId);
-                        }
+                        // else
+                        // {
+                        //     disconnectedClients.Add(clientId);
+                        // }
                     }
                     catch (Exception ex)
                     {

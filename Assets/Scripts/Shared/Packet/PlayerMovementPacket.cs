@@ -1,31 +1,39 @@
 using System;
-using UnityEngine;
 
 namespace Shared.Packet
 {
     [Serializable]
     public class PlayerMovementPacket : IDisposable
     {
-        // Movement-related data (2D)
-        public int playerId;
-        public Vector2 position;    // Player's position (in 2D)
-        public Vector2 velocity;    // Player's movement velocity (2D)
-        public float rotation;      // Rotation around the Z-axis (for 2D)
-        
-        // Whether the player is running
+        public int playerId;          // Player's unique ID
+        public float positionX;       // X component of position
+        public float positionY;       // Y component of position
+        public float movementX;       // X component of movement vector
+        public float movementY;       // Y component of movement vector
+        public float rotation;        // Rotation around the Z-axis
 
-        public PlayerMovementPacket(int newId, Vector2 position, Vector2 velocity, float rotation)
+        public PlayerMovementPacket(int playerId, UnityEngine.Vector2 position, UnityEngine.Vector2 movementVector, float rotation)
         {
-            this.playerId = newId;
-            this.position = position;
-            this.velocity = velocity;
+            this.playerId = playerId;
+            this.positionX = position.x;
+            this.positionY = position.y;
+            this.movementX = movementVector.x;
+            this.movementY = movementVector.y;
             this.rotation = rotation;
-            Debug.Log("Player is moving around");
+        }
+
+        public UnityEngine.Vector2 GetPosition()
+        {
+            return new UnityEngine.Vector2(positionX, positionY);
+        }
+
+        public UnityEngine.Vector2 GetMovementVector()
+        {
+            return new UnityEngine.Vector2(movementX, movementY);
         }
 
         public void Dispose()
         {
-            
         }
     }
 }
