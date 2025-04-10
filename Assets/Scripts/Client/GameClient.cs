@@ -81,7 +81,7 @@ namespace Client
 
         private void InitializePacketHandlers()
         {
-            PacketHandlers.Add(typeof(WelcomePacket), new WelcomeHandler());
+            PacketHandlers.Add(typeof(TestPacket), new TestHandler());
         }
 
         private void InitReceiveThread()

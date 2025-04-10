@@ -4,14 +4,14 @@ using UnityEngine;
 
 namespace Shared.PacketHandler
 {
-    public class WelcomeHandler : IPacketHandler
+    public class TestHandler : IPacketHandler
     {
         public void HandlePacket(IDisposable packet)
         {
             Debug.Log("this is the welcome packet");
             
-            WelcomePacket welcomePacket = packet as WelcomePacket;
-            Debug.Log("this is the data from the packet: " + welcomePacket.Data);
+            TestPacket testPacket = packet as TestPacket;
+            Debug.Log("this is the data from the packet: " + testPacket.Data);
         }
     }
 }

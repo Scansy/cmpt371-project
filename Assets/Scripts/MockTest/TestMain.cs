@@ -14,7 +14,7 @@ namespace MockTest
     public class TestMain : MonoBehaviour
     {
         private readonly BinaryFormatter _formatter = new BinaryFormatter();
-        private IDisposable originalPacket = new WelcomePacket(1);
+        private IDisposable originalPacket = new WelcomePacket(1); // TODO
         // private bool _isRunning = true;
         private Thread _serverThread;
         private TcpListener _server;
@@ -23,7 +23,7 @@ namespace MockTest
 
         void Start()
         {
-            PacketHandlers.Add(typeof(WelcomePacket), new WelcomeHandler());
+            PacketHandlers.Add(typeof(TestPacket), new TestHandler());
             // TestSerialization();
             TestTcpSerialization();
         }

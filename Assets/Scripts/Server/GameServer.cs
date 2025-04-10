@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using GameLogic;
 using Shared.Packet;
@@ -39,7 +38,7 @@ namespace Server
 
         private void InitializePacketHandlers()
         {
-            PacketHandlers.Add(typeof(WelcomePacket), new WelcomeHandler());
+            PacketHandlers.Add(typeof(TestPacket), new TestHandler());
         }
 
         private void StartServer()
