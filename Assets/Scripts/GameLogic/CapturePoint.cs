@@ -41,13 +41,18 @@ namespace GameLogic
             {
                 captureProgress = captureTime; // Keep progress at max
             }
-            // If point is captured and a different player is in zone, reset progress
+            // If point is captured and a different player is in zone, decrease progress
             else if (isCaptured && playerInZone && !playersInZone.Contains(controllingPlayer))
             {
-                captureProgress = 0; // Reset progress for new player
-                isCaptured = false; // Point is now contested
-                controllingPlayer = null;
-                UpdatePointColor();
+                captureProgress -= Time.deltaTime;
+                if (captureProgress <= 0)
+                {
+                    // When progress reaches 0, the new player starts capturing
+                    isCaptured = false;
+                    controllingPlayer = playersInZone.First();
+                    UpdatePointColor();
+                    Debug.Log($"Point contested by {controllingPlayer.name}!");
+                }
             }
             // If point is not captured and exactly one player is in zone, increase progress
             else if (!isCaptured && playersInZone.Count == 1)
@@ -67,10 +72,10 @@ namespace GameLogic
             {
                 captureProgress = captureTime; // Keep progress at max
             }
-            // If point is not captured and no players are in zone, maintain neutral state
+            // If point is not captured and no players are in zone, maintain current progress
             else if (!isCaptured && !playerInZone)
             {
-                captureProgress = 0; // Keep progress at zero
+                // Progress stays the same
             }
             // If multiple players are in zone, progress stays the same (paused)
 
