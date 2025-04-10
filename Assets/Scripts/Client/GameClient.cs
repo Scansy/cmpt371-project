@@ -73,6 +73,7 @@ namespace Client
                 lock (_idLock)
                 {
                     _welcomePacketIdCounter++;
+                    _localPlayerId = _welcomePacketIdCounter.ToString();
                 }
 
                 SendMessage(new TestPacket(_welcomePacketIdCounter));
