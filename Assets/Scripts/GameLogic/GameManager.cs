@@ -21,6 +21,7 @@ namespace GameLogic
         private bool isGameRunning = false;
         private CapturePoint capturePoint;
         private GameObject winner;
+        private bool isServer;
 
         private void Awake()
         {
@@ -44,39 +45,69 @@ namespace GameLogic
                 return;
             }
 
-            // Broadcast to all client to start game on the client side
-            var startGamePacket = new StartGamePacket();
-            GameServer.Instance.BroadcastData(startGamePacket);
-            // Start game on the server side
-            StartGame();
+            // Determine if this is server or client
+            isServer = GameServer.Instance != null;
+
+            if (isServer)
+            {
+                // Server starts the game
+                StartGame();
+            }
+            else
+            {
+                // Client waits for server to start the game
+                GameClient.Instance.RegisterPacketHandler(new GameStateHandler(this));
+            }
         }
 
         public void StartGame()
         {
+            if (!isServer) return; // Only server can start the game
+
             currentTime = gameDuration;
             isGameRunning = true;
             if (endGamePanel != null) endGamePanel.SetActive(false);
             if (winnerText != null) winnerText.gameObject.SetActive(false);
+
+            // Broadcast game start to all clients
+            var startGamePacket = new StartGamePacket();
+            GameServer.Instance.BroadcastData(startGamePacket);
+
             StartCoroutine(GameTimer());
         }
 
-        // Game timer will NOT be updated on the client side, since client side also has its own GameManager
-        // that times the game on the client side.
         private IEnumerator GameTimer()
         {
             while (currentTime > 0 && isGameRunning)
             {
                 currentTime -= Time.deltaTime;
+                
+                if (isServer)
+                {
+                    // Server broadcasts time updates
+                    var timeUpdatePacket = new GameTimeUpdatePacket(currentTime);
+                    GameServer.Instance.BroadcastData(timeUpdatePacket);
+                }
+                
                 UpdateTimerDisplay();
                 yield return null;
             }
 
-            if (isGameRunning)
+            if (isGameRunning && isServer)
             {
-                // Broadcast to all client to end game on the client side
+                // Server determines game end
                 var endGamePacket = new EndGamePacket();
                 GameServer.Instance.BroadcastData(endGamePacket);
                 EndGame();
+            }
+        }
+
+        public void UpdateGameTime(float newTime)
+        {
+            if (!isServer) // Only clients update time from server
+            {
+                currentTime = newTime;
+                UpdateTimerDisplay();
             }
         }
 
@@ -90,13 +121,20 @@ namespace GameLogic
             }
         }
 
-        private void EndGame()
+        public void EndGame()
         {
             isGameRunning = false;
             
-            // Get the winner (player controlling the point at game end)
-            winner = capturePoint.GetControllingPlayer();
-            
+            if (isServer)
+            {
+                // Server determines winner
+                winner = capturePoint.GetControllingPlayer();
+                
+                // Broadcast winner to all clients
+                var winnerPacket = new GameWinnerPacket(winner != null ? winner.name : "No Winner");
+                GameServer.Instance.BroadcastData(winnerPacket);
+            }
+
             // Display winner
             if (winner != null && winnerText != null)
             {
@@ -125,6 +163,8 @@ namespace GameLogic
 
         public void RestartGame()
         {
+            if (!isServer) return; // Only server can restart the game
+
             // Reset game state
             if (capturePoint != null)
             {
