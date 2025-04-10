@@ -14,7 +14,7 @@ namespace MockTest
     public class TestMain : MonoBehaviour
     {
         private readonly BinaryFormatter _formatter = new BinaryFormatter();
-        private IDisposable originalPacket = new WelcomePacket();
+        private IDisposable originalPacket = new WelcomePacket(1);
         // private bool _isRunning = true;
         private Thread _serverThread;
         private TcpListener _server;
