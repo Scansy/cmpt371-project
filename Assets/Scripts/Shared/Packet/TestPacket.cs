@@ -11,7 +11,7 @@ namespace Shared.Packet
         public int ID { get; set; } // Unique ID for the packet
        
 
-        public WelcomePacket(int id)
+        public TestPacket(int id)
         {
             ID = id;
 

@@ -24,18 +24,18 @@ namespace Client
         
         private Thread _receiveThread;
         private NetworkStream _stream;
-        public readonly Dictionary<Type, IPacketHandler> PacketHandlers = new Dictionary<Type, IPacketHandler>();
+        private readonly Dictionary<Type, IPacketHandler> _packetHandlers = new Dictionary<Type, IPacketHandler>();
         
         private Thread _sendThread;
 
         private ConcurrentQueue<IDisposable> _packetQueue = new ConcurrentQueue<IDisposable>(new Queue<IDisposable>());
-        
-        private readonly string serverIP = "127.0.0.1";
-        private const int serverPort = GameServer.DEFAULT_PORT;
+
+        private const string ServerIP = "127.0.0.1";
+        private const int ServerPort = GameServer.DEFAULT_PORT;
         public GameObject playerPrefab;
 
-        private PlayerSpawner playerSpawner;
-        private string localPlayerId;
+        private PlayerSpawner _playerSpawner;
+        private string _localPlayerId;
 
         void Start()
         {
@@ -49,29 +49,29 @@ namespace Client
             ConnectToServer();
         }
 
-        private int welcomePacketIdCounter = 1; // Counter for generating unique packet IDs
-        private readonly object idLock = new object(); // Lock object for thread safety
+        private int _welcomePacketIdCounter = 1; // Counter for generating unique packet IDs
+        private readonly object _idLock = new object(); // Lock object for thread safety
 
         private void ConnectToServer()
         {
             try
             {
-                Debug.Log("Attempting to connect to server at " + serverIP + ":" + serverPort);
-                _client = new TcpClient(serverIP, serverPort);
+                Debug.Log("Attempting to connect to server at " + ServerIP + ":" + ServerPort);
+                _client = new TcpClient(ServerIP, ServerPort);
                 _stream = _client.GetStream();
                 
-                if (PacketHandlers.Count == 0)
+                if (_packetHandlers.Count == 0)
                 {
                     InitializePacketHandlers();
                 }
                 InitReceiveThread();
                 InitSendThread();
-                lock (idLock)
+                lock (_idLock)
                 {
-                    welcomePacketIdCounter++;
+                    _welcomePacketIdCounter++;
                 }
 
-                SendMessage(new WelcomePacket(welcomePacketIdCounter)); // TODO
+                SendMessage(new TestPacket(_welcomePacketIdCounter));
             }
             catch (Exception e)
             {
@@ -81,7 +81,7 @@ namespace Client
 
         private void InitializePacketHandlers()
         {
-            PacketHandlers.Add(typeof(TestPacket), new TestHandler());
+            _packetHandlers.Add(typeof(TestPacket), new TestHandler());
         }
 
         private void InitReceiveThread()
@@ -105,7 +105,7 @@ namespace Client
 
         private void HandlePacket(IDisposable packet)
         {
-            PacketHandlers[packet.GetType()].HandlePacket(packet);
+            _packetHandlers[packet.GetType()].HandlePacket(packet);
         }
 
         private void InitSendThread()
@@ -160,9 +160,9 @@ namespace Client
                 // Enqueue the Instantiate call to the main thread
                 MainThreadDispatcher.RunOnMainThread(() =>
                 {
-                    if (playerSpawner != null)
+                    if (_playerSpawner != null)
                     {
-                        playerSpawner.SpawnNetworkPlayer(localPlayerId, position);
+                        _playerSpawner.SpawnNetworkPlayer(_localPlayerId, position);
                     }
                     else
                     {
@@ -184,9 +184,9 @@ namespace Client
             {
                 MainThreadDispatcher.RunOnMainThread(() =>
                 {
-                    if (playerSpawner != null)
+                    if (_playerSpawner != null)
                     {
-                        playerSpawner.SpawnNetworkPlayer(localPlayerId, Vector3.zero);
+                        _playerSpawner.SpawnNetworkPlayer(_localPlayerId, Vector3.zero);
                     }
                     else
                     {
