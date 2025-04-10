@@ -17,6 +17,7 @@ namespace Client
 {
     public class GameClient : MonoBehaviour
     {
+        //public static GameClient Instance { get; private set; }
         private Dictionary<string, GameObject> _otherPlayers = new Dictionary<string, GameObject>();
         private TcpClient _client;
         private readonly BinaryFormatter _formatter = new BinaryFormatter();
@@ -37,6 +38,10 @@ namespace Client
         private PlayerSpawner _playerSpawner;
         private string _localPlayerId;
 
+        public GameClient(string id) {
+            this._localPlayerId = id;
+        }
+
         public string getPlayerId(){
             return _localPlayerId;
         }
@@ -49,7 +54,8 @@ namespace Client
             //     Debug.LogError("PlayerSpawner not found in scene!");
             //     return;
             // }
-            
+            // Instance = this;
+            DontDestroyOnLoad(gameObject);
             ConnectToServer();
         }
 
@@ -63,20 +69,31 @@ namespace Client
                 Debug.Log("Attempting to connect to server at " + ServerIP + ":" + ServerPort);
                 _client = new TcpClient(ServerIP, ServerPort);
                 _stream = _client.GetStream();
+
+                  Debug.Log("Connected to server! abdkjawndkjwad1");
                 
                 if (_packetHandlers.Count == 0)
                 {
                     InitializePacketHandlers();
                 }
+
+                 Debug.Log("Connected to server! abdkjawndkjwad2");
+
                 InitReceiveThread();
                 InitSendThread();
+
+                 Debug.Log("Connected to server! abdkjawndkjwad3");
                 lock (_idLock)
                 {
                     _welcomePacketIdCounter++;
                     _localPlayerId = _welcomePacketIdCounter.ToString();
                 }
 
+                 Debug.Log("Connected to server! abdkjawndkjwad4");
+
                 SendMessage(new TestPacket(_welcomePacketIdCounter));
+
+                 Debug.Log("Connected to server! abdkjawndkjwad5");
             }
             catch (Exception e)
             {

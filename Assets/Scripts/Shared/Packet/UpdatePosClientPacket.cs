@@ -9,10 +9,18 @@ namespace Shared.Packet
         private Vector2 position;
         private Quaternion rotation;
 
-        public UpdatePosClientPacket(Vector2 position, Quaternion rotation)
+        private string playerId;
+        public UpdatePosClientPacket(string playerID, Vector2 position, Quaternion rotation)
         {
+            this.playerId = playerID;
             this.position = position;
             this.rotation = rotation;
+        }
+
+        public string PlayerId
+        {
+            get { return playerId; }
+            set { playerId = value; }
         }
 
         public void Dispose()

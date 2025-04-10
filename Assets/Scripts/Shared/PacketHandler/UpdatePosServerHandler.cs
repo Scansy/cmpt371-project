@@ -5,7 +5,7 @@ using Shared.Packet;
 
 namespace Shared.PacketHandler
 {
-    public class UpdatePosServerHandler : MonoBehaviour, IPacketHandler 
+    public class UpdatePosServerHandler : MonoBehaviour, IPacketHandler
     {
         private GameServer server;
 
@@ -21,28 +21,32 @@ namespace Shared.PacketHandler
             var position = updatePositionPacket.Position;
             var rotation = updatePositionPacket.Rotation;
 
-            UpdatePositionPlayer(position, rotation);
-            
-            server.BroadcastData(new UpdatePosClientPacket(position, rotation));
+            UpdatePositionPlayer(updatePositionPacket.PlayerId, position, rotation);
+
+            server.BroadcastData(new UpdatePosClientPacket(updatePositionPacket.PlayerId, position, rotation));
         }
 
-        private void UpdatePositionPlayer(Vector2 position, Quaternion rotation)
+        private void UpdatePositionPlayer(string playerId, Vector2 position, Quaternion rotation)
         {
-            // TODO: in the server, update _players
-            var playerList = server._players;
+            // Use the correct Players dictionary from GameServer
+            var playerList = server.Players;
 
-            foreach (var player in playerList)
+            if (playerList.ContainsKey(playerId))
+            {
+                try
                 {
-                    try
-                    {
-                        player.Value.position = position;
-                        player.Value.rotation = rotation;
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"Error sending data to client {player.Key}: {ex.Message}");
-                    }
+                    playerList[playerId].position = position;
+                    playerList[playerId].rotation = rotation;
                 }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error updating player {playerId}: {ex.Message}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"Player with ID {playerId} not found in the server's player list.");
+            }
         }
     }
 }

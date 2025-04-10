@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using GameLogic;
 using Shared.Packet;
-using Shared.PacketHandler;
 using UnityEngine;
+using GameLogic;
 
 namespace Server
 {
@@ -20,17 +19,13 @@ namespace Server
         {
             get
             {
-                if (_applicationIsQuitting)
-                {
-                    return null;
-                }
+                if (_applicationIsQuitting) return null;
 
                 lock (_lock)
                 {
                     if (_instance == null)
                     {
                         _instance = FindObjectOfType<GameServer>();
-                        
                         if (_instance == null)
                         {
                             GameObject go = new GameObject("GameServer");
@@ -43,205 +38,92 @@ namespace Server
             }
         }
 
-        private void Awake()
-        {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            
-            _instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-
-        private void OnDestroy()
-        {
-            _applicationIsQuitting = true;
-        }
-
         private TcpListener _server;
         private Thread _serverThread;
         private bool _isRunning = false;
 
         public readonly Dictionary<int, ServerSideClient> ServerSideClients = new Dictionary<int, ServerSideClient>();
-        public Dictionary<string, PlayerData> _players = new Dictionary<string, PlayerData>(); // Track players by ID
-        public readonly Dictionary<Type, IPacketHandler> PacketHandlers = new Dictionary<Type, IPacketHandler>(); // maps packet class to handler
-            
+        public readonly Dictionary<string, PlayerData> Players = new Dictionary<string, PlayerData>();
+
         public const short DEFAULT_PORT = 7777;
-        
-        public void HandlePacket(IDisposable packet)
-        {
-            PacketHandlers[packet.GetType()].HandlePacket(packet);
-        }
-    
-        void Start()
+
+        private void Start()
         {
             _serverThread = new Thread(StartServer);
             _serverThread.IsBackground = true;
-            InitializePacketHandlers();
             _serverThread.Start();
-        }
-
-        private void InitializePacketHandlers()
-        {
-            PacketHandlers.Add(typeof(TestPacket), new TestHandler());
-        }
-
-        void HandleNewClient(TcpClient client)
-        {
-            string playerId = Guid.NewGuid().ToString(); // Generate unique ID
-            Vector3 spawnPosition = new Vector3(UnityEngine.Random.Range(-5f, 5f), UnityEngine.Random.Range(-5f, 5f), 0);
-
-            // Create a temporary GameObject to generate a Transform
-            GameObject tempPlayerObject = new GameObject("TempPlayer_" + playerId);
-            tempPlayerObject.transform.position = spawnPosition;
-            tempPlayerObject.transform.rotation = Quaternion.identity;
-
-            lock (_players)
-            {
-                _players[playerId] = new PlayerData
-                {
-                    id = playerId,
-                    position = spawnPosition,
-                    rotation = tempPlayerObject.transform.rotation
-                };
-            }
-
-            // Use the Transform of the temporary GameObject for the SpawnPlayerPacket
-            var spawnPacket = new SpawnPlayerPacket(spawnPosition, tempPlayerObject.transform);
-            BroadcastData(spawnPacket);
-
-            foreach (var player in _players.Values)
-            {
-                var existingPlayerPacket = new SpawnPlayerPacket(player.position,  tempPlayerObject.transform);
-                ServerSideClients[ServerSideClients.Count].SendMessage(existingPlayerPacket);
-            }
-
-            // Clean up the temporary GameObject
-            Destroy(tempPlayerObject);
         }
 
         private void StartServer()
         {
             try
             {
-                _server = new TcpListener(IPAddress.Any, 7777);
-                _server.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true); // Allow address reuse
+                _server = new TcpListener(IPAddress.Any, DEFAULT_PORT);
                 _server.Start();
                 _isRunning = true;
-                Debug.Log("Server started on port 7777...");
+                Debug.Log("Server started on port " + DEFAULT_PORT);
 
                 while (_isRunning)
                 {
-                    // UpdatePlayerPositions(); // Send game state to all clients every frame
-                    Thread.Sleep(1); // Adjust the sleep time as needed for performance
-                    
-                    if (_server.Pending()) // Check if a client is waiting to connect
+                    if (_server.Pending())
                     {
                         TcpClient client = _server.AcceptTcpClient();
                         Debug.Log("Client connected!");
 
-                        ServerSideClient serverSideClient = new ServerSideClient(this, client);
-
                         lock (ServerSideClients)
                         {
-                            int clientId = ServerSideClients.Count + 1; // Generate a unique ID for the client
+                            int clientId = ServerSideClients.Count + 1;
+                            var serverSideClient = new ServerSideClient(this, client, clientId);
                             ServerSideClients[clientId] = serverSideClient;
-                            Debug.Log("Client ID: " + clientId + "Added to server side clients.");
-                        }
 
-                        Thread clientThread = new Thread(serverSideClient.ReceiveMessage);
-                        clientThread.IsBackground = true;
-                        clientThread.Start();
-                        Debug.Log("Client thread started!");
-                        HandleNewClient(client); // Handle the new client
+                            Thread clientThread = new Thread(serverSideClient.ReceiveMessage);
+                            clientThread.IsBackground = true;
+                            clientThread.Start();
+                        }
                     }
+
+                    Thread.Sleep(1);
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogError("Failed to start server: " + ex.Message);
+                Debug.LogError("Server error: " + ex.Message);
             }
         }
-        
+
+        public void HandlePacket(IDisposable packet)
+        {
+            if (packet is UpdatePosServerPacket updatePacket)
+            {
+                lock (Players)
+                {
+                    if (Players.ContainsKey(updatePacket.PlayerId))
+                    {
+                        Players[updatePacket.PlayerId].position = updatePacket.Position;
+                        Players[updatePacket.PlayerId].rotation = updatePacket.Rotation;
+                    }
+                }
+
+                BroadcastData(packet);
+            }
+        }
+
         public void BroadcastData(IDisposable packet)
         {
             lock (ServerSideClients)
             {
-                List<int> disconnectedClients = new List<int>();
-                
-                foreach (var clientPair in ServerSideClients)
+                foreach (var client in ServerSideClients.Values)
                 {
-                    try
-                    {
-                        int clientId = clientPair.Key;
-                        ServerSideClient serverSideClient = clientPair.Value;
-                        
-                        if (serverSideClient != null && serverSideClient.IsConnected())
-                        {
-                            serverSideClient.SendMessage(packet);
-                        }
-                        else
-                        {
-                            disconnectedClients.Add(clientId);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"Error sending data to client {clientPair.Key}: {ex.Message}");
-                        disconnectedClients.Add(clientPair.Key);
-                    }
+                    client.SendMessage(packet);
                 }
-                
-                RemoveDisconnectedClients(disconnectedClients);
-            }
-        }
-        
-        private void RemoveDisconnectedClients(List<int> disconnectedClientIds)
-        {
-            foreach (int clientId in disconnectedClientIds)
-            {
-                ServerSideClients.Remove(clientId);
-                Debug.Log($"Removed disconnected client {clientId}");
             }
         }
 
-        // private void UpdatePlayerPositions()
-        // {
-        //     lock (_players)
-        //     {
-        //         foreach (var player in _players.Values)
-        //         {
-        //             // Convert Vector3 to Vector2 for the packet
-        //             Vector2 position2D = new Vector2(player.position.x, player.position.y);
-        //             // Convert Quaternion to float (using euler angles)
-        //             float rotation = player.rotation.eulerAngles.z;
-                    
-        //             // We need to generate a player ID for the packet
-        //             // Since we're using string IDs in _players, we'll use a hash of the string
-        //             int playerId = player.id.GetHashCode();
-                    
-        //             var updatePacket = new UpdatePosServerPacket(playerId, position2D, rotation);
-        //             BroadcastData(updatePacket);
-        //         }
-        //     }
-        // }
-        
-        void OnApplicationQuit()
+        private void OnApplicationQuit()
         {
             _isRunning = false;
-
-            try
-            {
-                _server?.Stop();
-                _serverThread?.Join(); // Wait for the server thread to finish
-                Debug.Log("Server stopped.");
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError("Error stopping server: " + ex.Message);
-            }
+            _server?.Stop();
+            _serverThread?.Join();
         }
     }
 }

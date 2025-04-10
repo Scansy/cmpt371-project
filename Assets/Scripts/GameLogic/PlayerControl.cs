@@ -7,7 +7,7 @@ namespace GameLogic
 {
     public class PlayerControl : MonoBehaviour
     {
-        public GameClient client;
+        //public GameClient client;
         public float moveSpeed = 5f;
         public Rigidbody2D rb;
         public Weapon weapon;
@@ -28,6 +28,11 @@ namespace GameLogic
         {
             playerCollider = GetComponent<Collider2D>();
             spriteRenderer = GetComponent<SpriteRenderer>();
+           // client = GameClient.Instance;
+            // if (client == null)
+            // {
+            //     Debug.LogError("GameClient instance not found in the scene!");
+            // }
         }
 
         void Update()
@@ -60,18 +65,28 @@ namespace GameLogic
         {
             if (isDead) return;
 
-            // rb.velocity = new Vector2(moveDirection.x * moveSpeed, moveDirection.y * moveSpeed);
 
             Vector2 aimDirection = mousePosition - rb.position;
-            // z angle for aim
             float aimAngle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg - 90f;
             Quaternion rotation = Quaternion.Euler(0, 0, aimAngle);
             rb.rotation = aimAngle;
 
-            // Easy to read
-            string id = client.getPlayerId();
-            
-            client.SendMessage(new UpdatePosServerPacket(id, rb.position, rotation));
+            // string id = client.getPlayerId();
+            // if (string.IsNullOrEmpty(id))
+            // {
+            //     Debug.LogError("Player ID is null or empty!");
+            //     return;
+            // }
+
+            // Create the packet with proper values
+            UpdatePosServerPacket packet = new UpdatePosServerPacket(
+                "1",           // Use the actual player ID instead of hardcoded "1"
+                rb.position,  // Current position
+                rotation      // Current rotation
+            );
+
+            // Send the packet
+            //client.SendMessage(packet);
         }
 
         public void Die()
