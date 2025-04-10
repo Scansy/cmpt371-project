@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using System;
 
 namespace GameLogic
 {
@@ -23,6 +24,10 @@ namespace GameLogic
         private Color originalColor;
         private SpriteRenderer spriteRenderer;
     
+        [Header("Network Settings")]
+        public bool isServer = false; // Set to true on the server instance
+        private GameServer server;
+    
         void Start()
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
@@ -34,6 +39,7 @@ namespace GameLogic
 
         void Update()
         {
+            if (!isServer) return; // Only run capture logic on server
             playerInZone = playersInZone.Count > 0;
 
             // If point is captured and controlling player is in zone, maintain capture
@@ -80,14 +86,22 @@ namespace GameLogic
             // If multiple players are in zone, progress stays the same (paused)
 
             captureBar.value = captureProgress / captureTime;
+
+            // Broadcast state changes
+            if (stateChanged || progressChanged)
+            {
+                BroadcastCapturePointState();
+            }
         }
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (other.CompareTag("Player"))
+            if (!other.CompareTag("Player")) return;
+
+            if (isServer)
             {
                 playersInZone.Add(other.gameObject);
-                Debug.Log($"Player {other.gameObject.name} entered. Total players: {playersInZone.Count}");
+                // State change will be broadcast in Update
             }
         }
 
@@ -150,5 +164,24 @@ namespace GameLogic
                 captureBar.value = 0f;
             }
         }
+
+        private void BroadcastCapturePointState()
+        {
+            if (!isServer || server == null) return;
+
+            string controllerId = controllingPlayer != null ? 
+                controllingPlayer.GetComponent<PlayerControl>().client.getPlayerId() : "";
+
+            var updatePacket = new CapturePointUpdatePacket(
+                captureProgress / captureTime,
+                isCaptured,
+                controllerId,
+                currentColor
+            );
+
+            server.BroadcastData(updatePacket);
+        }
     }
+
+   
 }

@@ -51,6 +51,11 @@ namespace Client
             // }
             
             ConnectToServer();
+            
+            // Register packet handlers
+            RegisterPacketHandler(new PlayerStateHandler(this));
+            RegisterPacketHandler(new BulletHandler(this));
+            RegisterPacketHandler(new CapturePointHandler(this, FindObjectOfType<CapturePoint>()));
         }
 
         private int _welcomePacketIdCounter = 1; // Counter for generating unique packet IDs
@@ -233,6 +238,11 @@ namespace Client
             _receiveThread?.Join();
             _client?.Close();
             _stream?.Close();
+        }
+
+        private void RegisterPacketHandler(IPacketHandler handler)
+        {
+            _packetHandlers.Add(handler.GetType(), handler);
         }
     }
 }

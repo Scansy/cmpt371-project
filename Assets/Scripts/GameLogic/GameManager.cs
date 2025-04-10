@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
+using Shared.Packet;
+using Server;
 
 namespace GameLogic
 {
@@ -42,6 +44,10 @@ namespace GameLogic
                 return;
             }
 
+            // Broadcast to all client to start game on the client side
+            var startGamePacket = new StartGamePacket();
+            GameServer.Instance.BroadcastData(startGamePacket);
+            // Start game on the server side
             StartGame();
         }
 
@@ -54,6 +60,8 @@ namespace GameLogic
             StartCoroutine(GameTimer());
         }
 
+        // Game timer will NOT be updated on the client side, since client side also has its own GameManager
+        // that times the game on the client side.
         private IEnumerator GameTimer()
         {
             while (currentTime > 0 && isGameRunning)
@@ -65,6 +73,9 @@ namespace GameLogic
 
             if (isGameRunning)
             {
+                // Broadcast to all client to end game on the client side
+                var endGamePacket = new EndGamePacket();
+                GameServer.Instance.BroadcastData(endGamePacket);
                 EndGame();
             }
         }
