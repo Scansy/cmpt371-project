@@ -18,8 +18,8 @@ namespace Shared.PacketHandler
         {
             var projectileMovementPacket = (ProjectileMovementPacket)packet;
             
-            // Update position
-            transform.position = projectileMovementPacket.position;
+            Vector3 position = new Vector3(projectileMovementPacket.position.x, projectileMovementPacket.position.y, 0f);
+            transform.position = position;
             
             // Update velocity (for physics-based movement)
             _rb.velocity = projectileMovementPacket.velocity;

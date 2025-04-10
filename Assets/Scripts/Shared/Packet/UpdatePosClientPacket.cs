@@ -6,10 +6,10 @@ namespace Shared.Packet
     [Serializable]
     public class UpdatePosClientPacket : IDisposable
     {
-        private Vector2 position;
-        private Quaternion rotation;
+        private SerializableVector2 position;
+        private float rotation;
 
-        public UpdatePosClientPacket(Vector2 position, Quaternion rotation)
+        public UpdatePosClientPacket(SerializableVector2 position, float rotation)
         {
             this.position = position;
             this.rotation = rotation;
@@ -24,7 +24,7 @@ namespace Shared.Packet
             get { return position; }
         }
 
-        public Quaternion Rotation
+        public float Rotation
         {
             get { return rotation; }
         }

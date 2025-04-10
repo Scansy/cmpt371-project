@@ -6,12 +6,12 @@ namespace Shared.Packet
     [Serializable]
     public class UpdatePosServerPacket : IDisposable
     {
-        private Vector2 position;
-        private Quaternion rotation;
+        private SerializableVector2 position;
+        private float rotation;
 
         private string playerId;
 
-        public UpdatePosServerPacket(string playerID, Vector2 position, Quaternion rotation)
+        public UpdatePosServerPacket(string playerID, SerializableVector2 position, float rotation)
         {
             this.playerId = playerID;
             this.position = position;
@@ -22,12 +22,12 @@ namespace Shared.Packet
         {
         }
 
-        public Vector2 Position
+        public SerializableVector2 Position
         {
             get { return position; }
         }
 
-        public Quaternion Rotation
+        public float Rotation
         {
             get { return rotation; }
         }

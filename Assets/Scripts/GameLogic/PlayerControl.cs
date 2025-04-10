@@ -26,6 +26,7 @@ namespace GameLogic
 
         void Start()
         {
+            client = GameClient.Instance;
             playerCollider = GetComponent<Collider2D>();
             spriteRenderer = GetComponent<SpriteRenderer>();
         }
@@ -90,7 +91,7 @@ namespace GameLogic
             if (client != null)
             {
                 string id = client.getPlayerId();
-                client.SendMessage(new UpdatePosServerPacket(id, rb.position, Quaternion.Euler(0, 0, aimAngle)));
+                client.SendMessage(new UpdatePosServerPacket(id, rb.position, aimAngle));
             }
             
         }

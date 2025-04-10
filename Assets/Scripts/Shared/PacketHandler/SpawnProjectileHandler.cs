@@ -10,20 +10,21 @@ namespace Shared.PacketHandler
 
         public void HandlePacket(IDisposable packet)
         {
-            var  projectileMovementPacket = (ProjectileMovementPacket)packet;
+            var  spawnPacket = (SpawnProjectilePacket)packet;
             
             // Spawn the projectile
+            Vector3 position = new Vector3(spawnPacket.spawnPosition.x, spawnPacket.spawnPosition.y, 0f);
             GameObject projectile = Instantiate(
                 _projectilePrefab,
-                projectileMovementPacket.position,
-                Quaternion.Euler(0f, 0f, projectileMovementPacket.rotation)
+                position,
+                Quaternion.Euler(0f, 0f, spawnPacket.startingRotation)
             );
 
             // Apply velocity
             Rigidbody2D rb = projectile.GetComponent<Rigidbody2D>();
             if (rb != null)
             {
-                rb.velocity = projectileMovementPacket.velocity;
+                rb.velocity = spawnPacket.velocity;
             }
         }
 

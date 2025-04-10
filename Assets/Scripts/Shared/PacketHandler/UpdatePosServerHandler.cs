@@ -21,7 +21,7 @@ namespace Shared.PacketHandler
             var position = updatePositionPacket.Position;
             var rotation = updatePositionPacket.Rotation;
 
-            UpdatePositionPlayer(position, rotation);
+            UpdatePositionPlayer(position, Quaternion.Euler(0f, 0f, updatePositionPacket.Rotation));
             
             server.BroadcastData(new UpdatePosClientPacket(position, rotation));
         }

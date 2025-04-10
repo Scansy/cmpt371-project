@@ -20,7 +20,8 @@ namespace Shared.PacketHandler
             var playerMovementPacket = (PlayerMovementPacket)packet;
             
             // Update position
-            transform.position = playerMovementPacket.position;
+            Vector3 position = new Vector3(playerMovementPacket.position.x, playerMovementPacket.position.y, 0f);
+            transform.position = position;
             
             // Update velocity (for physics-based movement)
             _rb.velocity = playerMovementPacket.velocity;

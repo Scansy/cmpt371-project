@@ -37,6 +37,20 @@ namespace Client
         private PlayerSpawner _playerSpawner;
         private string _localPlayerId;
 
+        public static GameClient Instance { get; private set; }
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject); // Ensure only one instance exists
+                return;
+            }
+
+            Instance = this;
+            DontDestroyOnLoad(gameObject); // Persist across scenes
+        }
+
         public string getPlayerId(){
             return _localPlayerId;
         }
@@ -62,11 +76,15 @@ namespace Client
                     try
                     {
                         // Create a dummy movement vector (replace with actual movement logic)
-                        Vector2 movementVector = new Vector2(1, 1);
                         Vector2 posVector = new Vector2(2, 2);
+                        Vector2 movVector = new Vector2(2, 2);
 
                         // Send the PlayerMovementPacket to the server
-                        SendMessage(new PlayerMovementPacket(posVector, movementVector, 0.0f));
+                        SendMessage(new PlayerMovementPacket(
+                        new SerializableVector2(posVector.x, posVector.y),
+                        new SerializableVector2(movVector.x, movVector.y),
+                        0.0f
+                        ));
 
                         // Sleep to avoid overloading the server with too many packets
                         Thread.Sleep(50); // Adjust the interval as needed (e.g., 50ms = 20 updates per second)
@@ -149,6 +167,7 @@ namespace Client
                     var stream = _client.GetStream();
                     var packet = (IDisposable)_formatter.Deserialize(stream); // Deserialize the packet
                     //Server.HandlePacket(packet); // Pass the packet to the server
+                    Debug.Log("Received packet: " + packet.GetType().Name);
                 }
                 catch (Exception ex)
                 {
