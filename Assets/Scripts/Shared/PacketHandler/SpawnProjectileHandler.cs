@@ -16,7 +16,7 @@ namespace Shared.PacketHandler
             GameObject projectile = Instantiate(
                 _projectilePrefab,
                 projectileMovementPacket.position,
-                projectileMovementPacket.rotation
+                Quaternion.Euler(0f, 0f, projectileMovementPacket.rotation)
             );
 
             // Apply velocity
