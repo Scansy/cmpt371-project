@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 
-
 namespace Shared.Packet
 {
     [Serializable]
@@ -14,9 +13,10 @@ namespace Shared.Packet
             this.spawnPosition = pos; // Set the spawn position
             this.startingRotation = playerTransform.rotation; // Capture the current rotation (Quaternion)
         }
-        // public void Dispose()
-        // {
-        //     s = null;
-        // }
+
+        public void Dispose()
+        {
+            
+        }
     }
 }

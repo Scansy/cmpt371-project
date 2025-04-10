@@ -11,7 +11,6 @@ namespace Shared.Packet
         public Vector2 velocity;    // Projectile's movement velocity (2D)
         public float rotation;      // Rotation around the Z-axis (for 2D)
 
-        // Constructor to initialize the packet
         public ProjectileMovementPacket(Vector2 position, Vector2 velocity, float rotation)
         {
             this.position = position;
@@ -19,10 +18,8 @@ namespace Shared.Packet
             this.rotation = rotation;
         }
 
-        // You can include methods to serialize or update the packet, depending on your needs
         public void Dispose()
         {
-            // Clean up if necessary
         }
     }
 }

@@ -16,9 +16,9 @@ namespace Shared.Packet
             this.startingRotation = projTransform.rotation; // Capture the current rotation (Quaternion)
             this.velocity = speed;
         }
-        // public void Dispose()
-        // {
-        //     s = null;
-        // }
+        
+        public void Dispose()
+        {
+        }
     }
 }

@@ -61,7 +61,7 @@ namespace Client
                 InitReceiveThread();
                 InitSendThread();
 
-                SendMessage(new WelcomePacket());
+                SendMessage(new TestPacket());
             }
             catch (Exception e)
             {
@@ -71,7 +71,7 @@ namespace Client
 
         private void InitializePacketHandlers()
         {
-            PacketHandlers.Add(typeof(WelcomePacket), new WelcomeHandler());
+            PacketHandlers.Add(typeof(TestPacket), new TestHandler());
         }
 
         private void InitReceiveThread()
