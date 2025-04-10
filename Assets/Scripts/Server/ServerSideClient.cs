@@ -12,6 +12,7 @@ namespace Server
         private GameServer _server;
         private BinaryFormatter _formatter = new BinaryFormatter();
         private TcpClient _client; //active socket instance
+        GameClient realClient;
 
         public ServerSideClient(GameServer server, TcpClient client)
         {
