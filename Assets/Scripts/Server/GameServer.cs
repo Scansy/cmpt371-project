@@ -243,12 +243,57 @@ namespace Server
         
         void OnApplicationQuit()
         {
+            Shutdown();
+        }
+        
+        public void Shutdown()
+        {
+            Debug.Log("Shutting down GameServer...");
             _isRunning = false;
 
             try
             {
-                _server?.Stop();
-                _serverThread?.Join(); // Wait for the server thread to finish
+                // Close all client connections
+                lock (ServerSideClients)
+                {
+                    List<int> clientIds = new List<int>(ServerSideClients.Keys);
+                    foreach (int clientId in clientIds)
+                    {
+                        try
+                        {
+                            if (ServerSideClients.TryGetValue(clientId, out ServerSideClient client))
+                            {
+                                Debug.Log($"Closing client connection {clientId}...");
+                                client.Shutdown();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError($"Error closing client {clientId}: {ex.Message}");
+                        }
+                    }
+                    ServerSideClients.Clear();
+                }
+                
+                // Stop the server
+                if (_server != null)
+                {
+                    _server.Stop();
+                    _server = null;
+                }
+                
+                // Wait for server thread to finish
+                if (_serverThread != null && _serverThread.IsAlive)
+                {
+                    Debug.Log("Waiting for server thread to finish...");
+                    _serverThread.Join(1000); // Wait up to 1 second
+                    if (_serverThread.IsAlive)
+                    {
+                        Debug.LogWarning("Server thread did not finish in time, aborting...");
+                        _serverThread.Abort();
+                    }
+                }
+                
                 Debug.Log("Server stopped.");
             }
             catch (Exception ex)

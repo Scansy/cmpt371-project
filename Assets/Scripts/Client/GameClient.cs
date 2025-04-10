@@ -261,29 +261,73 @@ namespace Client
             Debug.Log("Returning to Main Menu...");
 
             // Clean up the client connection
-            if (_client != null)
-            {
-                _client.Close();
-            }
-            if (_stream != null)
-            {
-                _stream.Close();
-            }
-            if (_receiveThread != null)
-            {
-                _receiveThread.Abort();
-            }
+            Shutdown();
 
             // Load the Main Menu scene
             SceneManager.LoadScene("Main Menu");
         }
 
+        public void Shutdown()
+        {
+            Debug.Log("Shutting down GameClient...");
+            _isRunning = false;
+            
+            // Wait for threads to finish
+            if (_receiveThread != null && _receiveThread.IsAlive)
+            {
+                Debug.Log("Waiting for receive thread to finish...");
+                _receiveThread.Join(1000); // Wait up to 1 second
+                if (_receiveThread.IsAlive)
+                {
+                    Debug.LogWarning("Receive thread did not finish in time, aborting...");
+                    _receiveThread.Abort();
+                }
+            }
+            
+            if (_sendThread != null && _sendThread.IsAlive)
+            {
+                Debug.Log("Waiting for send thread to finish...");
+                _sendThread.Join(1000); // Wait up to 1 second
+                if (_sendThread.IsAlive)
+                {
+                    Debug.LogWarning("Send thread did not finish in time, aborting...");
+                    _sendThread.Abort();
+                }
+            }
+            
+            // Close network resources
+            if (_stream != null)
+            {
+                try
+                {
+                    _stream.Close();
+                    _stream = null;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error closing stream: {ex.Message}");
+                }
+            }
+            
+            if (_client != null)
+            {
+                try
+                {
+                    _client.Close();
+                    _client = null;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error closing client: {ex.Message}");
+                }
+            }
+            
+            Debug.Log("GameClient shutdown complete.");
+        }
+
         void OnApplicationQuit()
         {
-            _isRunning = false;
-            _receiveThread?.Join();
-            _client?.Close();
-            _stream?.Close();
+            Shutdown();
         }
     }
 }

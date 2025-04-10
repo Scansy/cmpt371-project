@@ -4,6 +4,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using Shared.Packet;
 using Client;
+using UnityEngine;
 
 namespace Server
 {
@@ -44,6 +45,39 @@ namespace Server
                 var stream = _client.GetStream();
                 _formatter.Serialize(stream, packet);
             }
+        }
+        
+        public void Shutdown()
+        {
+            Debug.Log("Shutting down ServerSideClient...");
+            
+            // Stop the client thread
+            if (_clientThread != null && _clientThread.IsAlive)
+            {
+                Debug.Log("Waiting for client thread to finish...");
+                _clientThread.Join(1000); // Wait up to 1 second
+                if (_clientThread.IsAlive)
+                {
+                    Debug.LogWarning("Client thread did not finish in time, aborting...");
+                    _clientThread.Abort();
+                }
+            }
+            
+            // Close the client connection
+            if (_client != null)
+            {
+                try
+                {
+                    _client.Close();
+                    _client = null;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error closing client: {ex.Message}");
+                }
+            }
+            
+            Debug.Log("ServerSideClient shutdown complete.");
         }
     }
 }
