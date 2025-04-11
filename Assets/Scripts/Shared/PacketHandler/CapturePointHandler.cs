@@ -2,6 +2,7 @@ using UnityEngine;
 using Shared.Packet;
 using Shared.PacketHandler;
 using GameLogic;
+using System;
 
 namespace Client
 {
@@ -16,7 +17,7 @@ namespace Client
             this.capturePoint = capturePoint;
         }
 
-        public void HandlePacket(IPacket packet)
+        public void HandlePacket(IDisposable packet)
         {
             if (packet is CapturePointUpdatePacket updatePacket)
             {

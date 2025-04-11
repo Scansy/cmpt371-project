@@ -5,7 +5,7 @@ using System;
 namespace Shared.Packet
 {
     [Serializable]
-    public class CapturePointUpdatePacket : IPacket
+    public class CapturePointUpdatePacket : IDisposable
     {
         private float captureProgress;
         private bool isCaptured;
