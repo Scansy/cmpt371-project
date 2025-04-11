@@ -17,6 +17,22 @@ namespace Client
 {
     public class GameClient : MonoBehaviour
     {
+        public static GameClient Instance { get; private set; }
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject); // Ensure only one instance exists
+                return;
+            }
+
+            Instance = this;
+            DontDestroyOnLoad(gameObject); // Persist across scenes
+        }
+
+        
+
         private Dictionary<string, GameObject> _otherPlayers = new Dictionary<string, GameObject>();
         private TcpClient _client;
         private readonly BinaryFormatter _formatter = new BinaryFormatter();
@@ -41,6 +57,17 @@ namespace Client
             return _localPlayerId;
         }
 
+        public void OnConnectButtonClicked()
+        {
+            Debug.Log("Connect button clicked. Connecting to server...");
+
+            // Connect to the server
+            ConnectToServer();
+
+            // Load the game scene
+            SceneManager.LoadScene("Game");
+        }
+
         void Start()
         {
             // playerSpawner = PlayerSpawner.Instance;
@@ -49,7 +76,7 @@ namespace Client
             //     Debug.LogError("PlayerSpawner not found in scene!");
             //     return;
             // }
-            
+            SceneManager.sceneLoaded += OnGameSceneLoaded;
             ConnectToServer();
         }
 
@@ -93,7 +120,7 @@ namespace Client
                         }
 
                         // Create and send the PlayerMovementPacket
-                        Debug.Log("Sending movements to id: " + _localPlayerId);
+                        Debug.Log("Sending movements from id: " + _localPlayerId);
                         var movementPacket = new PlayerMovementPacket(Int32.Parse(_localPlayerId), position, movementVector, 0.0f);
                         SendMessage(movementPacket);
 
@@ -178,7 +205,8 @@ namespace Client
                 {
                     var stream = _client.GetStream();
                     var packet = (IDisposable)_formatter.Deserialize(stream); // Deserialize the packet
-                    //Server.HandlePacket(packet); // Pass the packet to the server
+                    Debug.Log("About to handle packet of type: " + packet.GetType().Name);
+                    HandlePacket(packet);
                 }
                 catch (Exception ex)
                 {
@@ -187,10 +215,60 @@ namespace Client
             }
         }
 
-        private void HandlePacket(IDisposable packet)
+        private Dictionary<string, GameObject> _spawnedPlayers = new Dictionary<string, GameObject>();
+
+public void HandlePacket(IDisposable packet)
+{
+    Debug.Log("GameClient is Handling packet of type: " + packet.GetType().Name);
+    if (packet is PlayerMovementPacket playerMovementPacket)
+    {
+        Debug.Log($"Processing PlayerMovementPacket for Player ID: {playerMovementPacket.playerId}");
+
+        MainThreadDispatcher.RunOnMainThread(() =>
+        {   
+            Debug.Log($"Found player object for ID: {playerMovementPacket.playerId}");
+            // Get the player prefab from the spawned players dictionary
+            if (GameClient.Instance._spawnedPlayers.TryGetValue(playerMovementPacket.playerId.ToString(), out var playerObject))
+            {
+                
+                // Update the player's position and rotation
+                playerObject.transform.position = playerMovementPacket.GetMovementVector();
+                playerObject.transform.rotation = Quaternion.Euler(0f, 0f, playerMovementPacket.rotation);
+
+                Debug.Log($"Updated Player {playerMovementPacket.playerId}: Position={playerMovementPacket.GetMovementVector()}, Rotation={playerMovementPacket.rotation}");
+            }
+            else
+            {
+                Debug.LogWarning($"Player with ID {playerMovementPacket.playerId} not found on the client.");
+            }
+        });
+    }
+
+    if (packet is SpawnPlayerPacket spawnPacket)
+    {
+        Debug.Log($"Spawning player at position: {spawnPacket.spawnPosition}");
+
+        MainThreadDispatcher.RunOnMainThread(() =>
         {
-            _packetHandlers[packet.GetType()].HandlePacket(packet);
-        }
+            
+                GameObject playerPrefab = GameClient.Instance.playerPrefab;
+                if (playerPrefab != null)
+                {
+                    GameObject player = UnityEngine.Object.Instantiate(playerPrefab, spawnPacket.spawnPosition, spawnPacket.startingRotation);
+                    player.name = $"Player_{spawnPacket.spawnPosition}";
+                    _spawnedPlayers[spawnPacket.spawnPosition.ToString()] = player;
+                    Debug.Log($"Player spawned at position: {spawnPacket.spawnPosition}");
+                }
+                
+            
+            else{
+                _packetHandlers[packet.GetType()].HandlePacket(packet);
+            }
+        });
+    }
+}
+
+
 
         private void InitSendThread()
         {
@@ -265,9 +343,11 @@ namespace Client
 
         private void OnGameSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            // Spawn the player GameObject
             if (scene.name == "Game" && playerPrefab != null)
             {
+                Debug.Log("Game scene loaded. Spawning local player and requesting other players...");
+
+                // Spawn the local player
                 MainThreadDispatcher.RunOnMainThread(() =>
                 {
                     if (_playerSpawner != null)
@@ -276,10 +356,18 @@ namespace Client
                     }
                     else
                     {
-                        Instantiate(playerPrefab, Vector3.zero, Quaternion.identity);
+                        GameObject player = Instantiate(playerPrefab, Vector3.zero, Quaternion.identity);
+                        player.name = $"Player_{_localPlayerId}";
+                        _spawnedPlayers[_localPlayerId] = player; // Add the local player to the spawned players dictionary
+                        Debug.Log($"Local player spawned with ID: {_localPlayerId}");
                     }
-                    Debug.Log("Player spawned in the game scene.");
                 });
+
+                // Notify the server that the client is ready to receive other players
+                Debug.Log("Notifying server that client is ready to receive other players...");
+                SendMessage(new TestPacket(_welcomePacketIdCounter)); // Replace with a proper "ready" packet if needed
+
+                Debug.Log("Client is ready to receive and process packets for other players.");
             }
 
             // Unsubscribe from the event to avoid duplicate calls

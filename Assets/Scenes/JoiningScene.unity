@@ -326,8 +326,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1bd379312ec40994fbacf5de53b498d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  serverIP: 127.0.0.1
-  serverPort: 7777
   playerPrefab: {fileID: 8424907707011471581, guid: d7125315f36195d46a50b37e9dcbcaf5, type: 3}
 --- !u!4 &369866515
 Transform:
@@ -863,8 +861,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 369866514}
-        m_TargetAssemblyTypeName: TCPClient, Assembly-CSharp
-        m_MethodName: ConnectToServer
+        m_TargetAssemblyTypeName: Client.GameClient, Assembly-CSharp
+        m_MethodName: OnConnectButtonClicked
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

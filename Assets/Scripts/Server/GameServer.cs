@@ -97,11 +97,8 @@ namespace Server
 
         void HandleNewClient(TcpClient client)
         {
-
-            Debug.Log("Handling new client connection..." + clientIdCounter);
             MainThreadDispatcher.RunOnMainThread(() =>
             {
-                Debug.Log("Running on main thread...");
                 string playerId = clientIdCounter.ToString(); // Generate unique ID
                 Vector3 spawnPosition = new Vector3(UnityEngine.Random.Range(-5f, 5f), UnityEngine.Random.Range(-5f, 5f), 0);
 
@@ -123,12 +120,14 @@ namespace Server
                 }
 
                 // Use the Transform of the temporary GameObject for the SpawnPlayerPacket
-                var spawnPacket = new SpawnPlayerPacket(spawnPosition, tempPlayerObject.transform);
+
+                var spawnPacket = new SpawnPlayerPacket(playerId, spawnPosition, tempPlayerObject.transform);
+                Debug.Log("Sending spawn packet to new client: " + playerId);
                 BroadcastData(spawnPacket);
 
                 foreach (var player in _players.Values)
                 {
-                    var existingPlayerPacket = new SpawnPlayerPacket(player.position, tempPlayerObject.transform);
+                    var existingPlayerPacket = new SpawnPlayerPacket(player.id, player.position, tempPlayerObject.transform);
                     ServerSideClients[ServerSideClients.Count].SendMessage(existingPlayerPacket);
                     Debug.Log("Sent existing player data to new client: " + player.id);
                 }
@@ -183,10 +182,12 @@ namespace Server
         
         public void BroadcastData(IDisposable packet)
         {
+            Debug.Log("Broadcasting data to all clients...");
             lock (ServerSideClients)
             {
                 List<int> disconnectedClients = new List<int>();
                 
+                Debug.Log($"Number of clients: {ServerSideClients.Count}");
                 foreach (var clientPair in ServerSideClients)
                 {
                     try
@@ -197,12 +198,11 @@ namespace Server
                         if (serverSideClient != null && serverSideClient.IsConnected())
                         {
                             Debug.Log($"Sending data to client {clientId}... from BroadcastData()");
+                            Debug.Log($"Packet type: {packet.GetType()}");
                             serverSideClient.SendMessage(packet);
+                            //serverSideClient.ReceiveMessage();
                         }
-                        // else
-                        // {
-                        //     disconnectedClients.Add(clientId);
-                        // }
+                        
                     }
                     catch (Exception ex)
                     {

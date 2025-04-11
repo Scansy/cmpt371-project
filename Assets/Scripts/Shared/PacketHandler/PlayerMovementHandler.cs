@@ -18,12 +18,11 @@ namespace Shared.PacketHandler
                 // Get the server instance
                 var server = GameServer.Instance;
 
-                Debug.Log($"Before loop");
+
                 foreach (PlayerData data in server._players.Values)
                 {
                     Debug.Log($"Player ID in _players: " + data.id);
                 }
-             Debug.Log($"AFter loop");
 
                 lock (server._players)
                 {
@@ -43,10 +42,7 @@ namespace Shared.PacketHandler
                 }
 
                 // Broadcast the updated position to all clients
-                server.BroadcastData(new UpdatePosClientPacket(
-                    playerMovementPacket.GetMovementVector(),
-                    Quaternion.Euler(0f, 0f, playerMovementPacket.rotation)
-                ));
+                server.BroadcastData(packet);
             }
             else
             {
