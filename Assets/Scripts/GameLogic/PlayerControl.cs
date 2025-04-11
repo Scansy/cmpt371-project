@@ -23,11 +23,13 @@ namespace GameLogic
         private Vector2 mousePosition;
         private Collider2D playerCollider;
         private SpriteRenderer spriteRenderer;
+        private RoleManager roleManager;
 
         void Start()
         {
             playerCollider = GetComponent<Collider2D>();
             spriteRenderer = GetComponent<SpriteRenderer>();
+            roleManager = FindObjectOfType<RoleManager>();
         }
 
         void Update()
@@ -44,6 +46,17 @@ namespace GameLogic
             moveDirection = new Vector2(moveX, moveY).normalized;
             mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             
+            // Only send position updates if we're the server
+            if (roleManager != null && roleManager.isServer)
+            {
+                Vector2 aimDirection = mousePosition - rb.position;
+                float aimAngle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg - 90f;
+                Quaternion rotation = Quaternion.Euler(0, 0, aimAngle);
+                rb.rotation = aimAngle;
+
+                string id = client.getPlayerId();
+                client.SendMessage(new UpdatePosServerPacket(id, rb.position, rotation));
+            }
         }
         /*
         TODO:

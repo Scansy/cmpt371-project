@@ -20,11 +20,7 @@ namespace GameLogic
     
         private float captureProgress = 0f;
         private bool playerInZone = false;
-        public GameObject ControllingPlayer
-        {
-            get => ControllingPlayer;
-            set => ControllingPlayer = value;
-        }
+        public GameObject ControllingPlayer { get; set;} = null;
         public bool IsCaptured { get; set; } = false;
         private HashSet<GameObject> playersInZone = new HashSet<GameObject>();
         private Color originalColor;
@@ -34,21 +30,37 @@ namespace GameLogic
         private Color currentColor;
     
         [Header("Network Settings")]
-        public bool isServer = false; // Set to true on the server instance
         private GameServer server;
+        private RoleManager roleManager;
     
         void Start()
         {
-            spriteRenderer = GetComponent<SpriteRenderer>();
-            if (spriteRenderer != null)
+            if (!roleManager.isServer)
             {
-                originalColor = spriteRenderer.color;
+                spriteRenderer = GetComponent<SpriteRenderer>();
+                if (spriteRenderer != null)
+                {
+                    spriteRenderer.enabled = true;
+                    originalColor = spriteRenderer.color;
+                }
+            }
+            else
+            {
+                if (spriteRenderer != null)
+                {
+                    spriteRenderer.enabled = false;
+                }
+            }
+            roleManager = FindObjectOfType<RoleManager>();
+            if (roleManager == null)
+            {
+                Debug.LogError("RoleManager not found in scene!");
             }
         }
 
         void Update()
         {
-            if (!isServer) return; // Only run capture logic on server
+            if (roleManager == null || !roleManager.isServer) return; // Only run capture logic on server
             playerInZone = playersInZone.Count > 0;
 
             // If point is captured and controlling player is in zone, maintain capture
@@ -111,7 +123,7 @@ namespace GameLogic
         {
             if (!other.CompareTag("Player")) return;
 
-            if (isServer)
+            if (roleManager.isServer)
             {
                 playersInZone.Add(other.gameObject);
                 // State change will be broadcast in Update
@@ -187,7 +199,7 @@ namespace GameLogic
 
         private void BroadcastCapturePointState()
         {
-            if (!isServer || server == null) return;
+            if (roleManager == null || !roleManager.isServer || server == null) return;
 
             string controllerId = ControllingPlayer != null ? 
                 ControllingPlayer.GetComponent<PlayerControl>().client.getPlayerId() : "";

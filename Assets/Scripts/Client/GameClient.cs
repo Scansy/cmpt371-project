@@ -90,6 +90,7 @@ namespace Client
         private void InitializePacketHandlers()
         {
             _packetHandlers.Add(typeof(TestPacket), new TestHandler());
+            _packetHandlers.Add(typeof(CapturePointUpdatePacket), new CapturePointHandler());
         }
 
         private void InitReceiveThread()
@@ -236,11 +237,6 @@ namespace Client
             _receiveThread?.Join();
             _client?.Close();
             _stream?.Close();
-        }
-
-        private void RegisterPacketHandler(IPacketHandler handler)
-        {
-            _packetHandlers.Add(handler.GetType(), handler);
         }
     }
 }

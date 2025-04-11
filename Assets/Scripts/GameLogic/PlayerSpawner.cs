@@ -15,6 +15,7 @@ namespace GameLogic
 
         // Track spawned players
         private Dictionary<string, GameObject> spawnedPlayers = new Dictionary<string, GameObject>();
+        private RoleManager roleManager;
 
         // Singleton instance
         public static PlayerSpawner Instance { get; private set; }
@@ -34,7 +35,17 @@ namespace GameLogic
 
         private void Start()
         {
-            SpawnPlayers();
+            roleManager = FindObjectOfType<RoleManager>();
+            if (roleManager == null)
+            {
+                Debug.LogError("RoleManager not found in scene!");
+                return;
+            }
+
+            if (roleManager.isServer)
+            {
+                SpawnPlayers();
+            }
         }
 
         public void SpawnPlayers()

@@ -21,6 +21,7 @@ namespace GameLogic
         private bool isGameRunning = false;
         private CapturePoint capturePoint;
         private GameObject winner;
+        private RoleManager roleManager;
 
         private void Awake()
         {
@@ -37,6 +38,13 @@ namespace GameLogic
 
         private void Start()
         {
+            roleManager = FindObjectOfType<RoleManager>();
+            if (roleManager == null)
+            {
+                Debug.LogError("RoleManager not found in scene!");
+                return;
+            }
+
             capturePoint = FindObjectOfType<CapturePoint>();
             if (capturePoint == null)
             {
@@ -45,7 +53,10 @@ namespace GameLogic
             }
             
             // Start game on the server side
-            StartGame();
+            if (roleManager.isServer)
+            {
+                StartGame();
+            }
         }
 
         public void StartGame()
