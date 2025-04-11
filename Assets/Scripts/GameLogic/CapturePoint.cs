@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using Server;
+using Shared.Packet;
 
 namespace GameLogic
 {
@@ -24,6 +25,9 @@ namespace GameLogic
         private HashSet<GameObject> playersInZone = new HashSet<GameObject>();
         private Color originalColor;
         private SpriteRenderer spriteRenderer;
+        private bool stateChanged = false;
+        private bool progressChanged = false;
+        private Color currentColor;
     
         [Header("Network Settings")]
         public bool isServer = false; // Set to true on the server instance
@@ -86,6 +90,10 @@ namespace GameLogic
             }
             // If multiple players are in zone, progress stays the same (paused)
 
+            float previousProgress = captureProgress;
+            captureProgress = Mathf.Clamp(captureProgress, 0f, captureTime);
+            progressChanged = Mathf.Abs(previousProgress - captureProgress) > 0.001f;
+
             captureBar.value = captureProgress / captureTime;
 
             // Broadcast state changes
@@ -137,11 +145,18 @@ namespace GameLogic
                 if (isCaptured && controllingPlayer != null)
                 {
                     Color playerColor = GetPlayerColor(controllingPlayer);
-                    spriteRenderer.color = playerColor;
+                    if (spriteRenderer.color != playerColor)
+                    {
+                        spriteRenderer.color = playerColor;
+                        currentColor = playerColor;
+                        stateChanged = true;
+                    }
                 }
-                else
+                else if (spriteRenderer.color != originalColor)
                 {
                     spriteRenderer.color = originalColor;
+                    currentColor = originalColor;
+                    stateChanged = true;
                 }
             }
         }

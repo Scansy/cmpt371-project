@@ -1,10 +1,11 @@
 using UnityEngine;
+using Shared.PacketHandler;
 using System;
 
 namespace Shared.Packet
 {
     [Serializable]
-    public class CapturePointUpdatePacket : IDisposable
+    public class CapturePointUpdatePacket : IPacket
     {
         private float captureProgress;
         private bool isCaptured;
