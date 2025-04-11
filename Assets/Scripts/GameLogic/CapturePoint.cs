@@ -20,11 +20,15 @@ namespace GameLogic
     
         private float captureProgress = 0f;
         private bool playerInZone = false;
-        private GameObject controllingPlayer = null;
-        private bool isCaptured = false;
+        public GameObject ControllingPlayer
+        {
+            get => ControllingPlayer;
+            set => ControllingPlayer = value;
+        }
+        public bool IsCaptured { get; set; } = false;
         private HashSet<GameObject> playersInZone = new HashSet<GameObject>();
         private Color originalColor;
-        private SpriteRenderer spriteRenderer;
+        public SpriteRenderer spriteRenderer { get; set; }
         private bool stateChanged = false;
         private bool progressChanged = false;
         private Color currentColor;
@@ -48,43 +52,43 @@ namespace GameLogic
             playerInZone = playersInZone.Count > 0;
 
             // If point is captured and controlling player is in zone, maintain capture
-            if (isCaptured && playersInZone.Contains(controllingPlayer))
+            if (IsCaptured && playersInZone.Contains(ControllingPlayer))
             {
                 captureProgress = captureTime; // Keep progress at max
             }
             // If point is captured and a different player is in zone, decrease progress
-            else if (isCaptured && playerInZone && !playersInZone.Contains(controllingPlayer))
+            else if (IsCaptured && playerInZone && !playersInZone.Contains(ControllingPlayer))
             {
                 captureProgress -= Time.deltaTime;
                 if (captureProgress <= 0)
                 {
                     // When progress reaches 0, the new player starts capturing
-                    isCaptured = false;
-                    controllingPlayer = playersInZone.First();
+                    IsCaptured = false;
+                    ControllingPlayer = playersInZone.First();
                     UpdatePointColor();
-                    Debug.Log($"Point contested by {controllingPlayer.name}!");
+                    Debug.Log($"Point contested by {ControllingPlayer.name}!");
                 }
             }
             // If point is not captured and exactly one player is in zone, increase progress
-            else if (!isCaptured && playersInZone.Count == 1)
+            else if (!IsCaptured && playersInZone.Count == 1)
             {
                 captureProgress += Time.deltaTime;
                 if (captureProgress >= captureTime)
                 {
                     captureProgress = captureTime;
-                    isCaptured = true;
-                    controllingPlayer = playersInZone.First();
+                    IsCaptured = true;
+                    ControllingPlayer = playersInZone.First();
                     UpdatePointColor();
-                    Debug.Log($"Point Captured by {controllingPlayer.name}!");
+                    Debug.Log($"Point Captured by {ControllingPlayer.name}!");
                 }
             }
             // If point is captured and no players are in zone, maintain capture
-            else if (isCaptured && !playerInZone)
+            else if (IsCaptured && !playerInZone)
             {
                 captureProgress = captureTime; // Keep progress at max
             }
             // If point is not captured and no players are in zone, maintain current progress
-            else if (!isCaptured && !playerInZone)
+            else if (!IsCaptured && !playerInZone)
             {
                 // Progress stays the same
             }
@@ -142,9 +146,9 @@ namespace GameLogic
         {
             if (spriteRenderer != null)
             {
-                if (isCaptured && controllingPlayer != null)
+                if (IsCaptured && ControllingPlayer != null)
                 {
-                    Color playerColor = GetPlayerColor(controllingPlayer);
+                    Color playerColor = GetPlayerColor(ControllingPlayer);
                     if (spriteRenderer.color != playerColor)
                     {
                         spriteRenderer.color = playerColor;
@@ -164,15 +168,15 @@ namespace GameLogic
         // Returns the player currently controlling the capture point
         public GameObject GetControllingPlayer()
         {
-            return controllingPlayer;
+            return ControllingPlayer;
         }
 
         // Resets the capture point to its initial state
         public void ResetPoint()
         {
             captureProgress = 0f;
-            isCaptured = false;
-            controllingPlayer = null;
+            IsCaptured = false;
+            ControllingPlayer = null;
             playersInZone.Clear();
             UpdatePointColor();
             if (captureBar != null)
@@ -185,12 +189,12 @@ namespace GameLogic
         {
             if (!isServer || server == null) return;
 
-            string controllerId = controllingPlayer != null ? 
-                controllingPlayer.GetComponent<PlayerControl>().client.getPlayerId() : "";
+            string controllerId = ControllingPlayer != null ? 
+                ControllingPlayer.GetComponent<PlayerControl>().client.getPlayerId() : "";
 
             var updatePacket = new CapturePointUpdatePacket(
                 captureProgress / captureTime,
-                isCaptured,
+                IsCaptured,
                 controllerId,
                 currentColor
             );

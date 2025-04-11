@@ -43,10 +43,7 @@ namespace GameLogic
                 Debug.LogError("No CapturePoint found in the scene!");
                 return;
             }
-
-            // Broadcast to all client to start game on the client side
-            var startGamePacket = new StartGamePacket();
-            GameServer.Instance.BroadcastData(startGamePacket);
+            
             // Start game on the server side
             StartGame();
         }
@@ -73,9 +70,6 @@ namespace GameLogic
 
             if (isGameRunning)
             {
-                // Broadcast to all client to end game on the client side
-                var endGamePacket = new EndGamePacket();
-                GameServer.Instance.BroadcastData(endGamePacket);
                 EndGame();
             }
         }

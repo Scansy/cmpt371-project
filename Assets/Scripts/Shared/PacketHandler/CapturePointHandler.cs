@@ -46,18 +46,18 @@ namespace Client
                             var playerControl = player.GetComponent<PlayerControl>();
                             if (playerControl != null && playerControl.client.getPlayerId() == updatePacket.ControllingPlayerId)
                             {
-                                capturePoint.controllingPlayer = player;
+                                capturePoint.ControllingPlayer = player;
                                 break;
                             }
                         }
                     }
                     else
                     {
-                        capturePoint.controllingPlayer = null;
+                        capturePoint.ControllingPlayer = null;
                     }
 
                     // Update the captured state
-                    capturePoint.isCaptured = updatePacket.IsCaptured;
+                    capturePoint.IsCaptured = updatePacket.IsCaptured;
                 }
             }
         }

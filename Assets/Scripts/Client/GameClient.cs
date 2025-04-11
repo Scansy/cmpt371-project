@@ -53,8 +53,6 @@ namespace Client
             ConnectToServer();
             
             // Register packet handlers
-            RegisterPacketHandler(new PlayerStateHandler(this));
-            RegisterPacketHandler(new BulletHandler(this));
             RegisterPacketHandler(new CapturePointHandler(this, FindObjectOfType<CapturePoint>()));
         }
 
