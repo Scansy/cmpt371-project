@@ -8,21 +8,15 @@ namespace Shared.Packet
     public class CapturePointUpdatePacket : IDisposable
     {
         private float captureProgress;
-        private bool isCaptured;
-        private string controllingPlayerId;
         private Color pointColor;
 
-        public CapturePointUpdatePacket(float progress, bool captured, string controllerId, Color color)
+        public CapturePointUpdatePacket(float progress, Color color)
         {
             captureProgress = progress;
-            isCaptured = captured;
-            controllingPlayerId = controllerId;
             pointColor = color;
         }
 
         public float CaptureProgress => captureProgress;
-        public bool IsCaptured => isCaptured;
-        public string ControllingPlayerId => controllingPlayerId;
         public Color PointColor => pointColor;
 
         public void Dispose()

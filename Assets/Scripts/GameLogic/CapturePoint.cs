@@ -194,8 +194,6 @@ namespace GameLogic
 
             var updatePacket = new CapturePointUpdatePacket(
                 captureProgress / captureTime,
-                IsCaptured,
-                controllerId,
                 currentColor
             );
 
